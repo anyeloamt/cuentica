@@ -1,0 +1,71 @@
+{
+  "$schema": "https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/master/assets/oh-my-opencode.schema.json",
+  "google_auth": false,
+  "agents": {
+    "sisyphus": {
+      "model": "anthropic/claude-opus-4-6"
+    },
+    "oracle": {
+      "model": "anthropic/claude-opus-4-6",
+      "variant": "high"
+    },
+    "librarian": {
+      "model": "anthropic/claude-sonnet-4-5"
+    },
+    "explore": {
+      "model": "anthropic/claude-haiku-4-5"
+    },
+    "multimodal-looker": {
+      "model": "anthropic/claude-haiku-4-5"
+    },
+    "prometheus": {
+      "model": "anthropic/claude-opus-4-6",
+      "variant": "max"
+    },
+    "metis": {
+      "model": "anthropic/claude-opus-4-6",
+      "variant": "max"
+    },
+    "momus": {
+      "model": "anthropic/claude-sonnet-4-5",
+      "variant": "medium"
+    },
+    "atlas": {
+      "model": "anthropic/claude-sonnet-4-5"
+    },
+    "hephaestus": {
+      "model": "anthropic/claude-opus-4-6",
+      "variant": "xhigh"
+    }
+  },
+  "categories": {
+    "visual-engineering": {
+      "model": "anthropic/claude-sonnet-4-5",
+      "variant": "high"
+    },
+    "ultrabrain": {
+      "model": "anthropic/claude-opus-4-6",
+      "variant": "xhigh"
+    },
+    "deep": {
+      "model": "anthropic/claude-sonnet-4-5",
+      "variant": "high"
+    },
+    "artistry": {
+      "model": "anthropic/claude-sonnet-4-5",
+      "variant": "high"
+    },
+    "quick": {
+      "model": "anthropic/claude-haiku-4-5"
+    },
+    "unspecified-low": {
+      "model": "anthropic/claude-haiku-4-5"
+    },
+    "unspecified-high": {
+      "model": "anthropic/claude-sonnet-4-5"
+    },
+    "writing": {
+      "model": "anthropic/claude-haiku-4-5"
+    }
+  }
+}

@@ -9,14 +9,25 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
+const isValidTheme = (value: unknown): value is Theme =>
+  value === 'light' || value === 'dark';
+
+export function ThemeProvider({ children }: { children: ReactNode }): JSX.Element {
   const [theme, setTheme] = useState<Theme>(() => {
-    const savedTheme = localStorage.getItem('cuentica-theme');
-    return (savedTheme as Theme) || 'light';
+    try {
+      const savedTheme = localStorage.getItem('cuentica-theme');
+      return isValidTheme(savedTheme) ? savedTheme : 'light';
+    } catch {
+      return 'light';
+    }
   });
 
   useEffect(() => {
-    localStorage.setItem('cuentica-theme', theme);
+    try {
+      localStorage.setItem('cuentica-theme', theme);
+    } catch (e) {
+      console.error(e);
+    }
     document.documentElement.setAttribute('data-theme', theme);
 
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');

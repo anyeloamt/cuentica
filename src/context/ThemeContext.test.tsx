@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
 
 import { ThemeProvider, useTheme } from './ThemeContext';
@@ -66,7 +66,54 @@ describe('ThemeContext', () => {
       button.click();
     });
     expect(screen.getByTestId('theme-value')).toHaveTextContent('light');
+
     expect(localStorage.getItem('cuentica-theme')).toBe('light');
     expect(document.documentElement.getAttribute('data-theme')).toBe('light');
+  });
+
+  it('updates meta theme-color when theme changes', () => {
+    const meta = document.createElement('meta');
+    meta.name = 'theme-color';
+    document.head.appendChild(meta);
+
+    render(
+      <ThemeProvider>
+        <TestComponent />
+      </ThemeProvider>
+    );
+
+    const button = screen.getByText('Toggle');
+
+    expect(meta.getAttribute('content')).toBe('#ffffff');
+
+    act(() => {
+      button.click();
+    });
+    expect(meta.getAttribute('content')).toBe('#1a1a2e');
+
+    document.head.removeChild(meta);
+  });
+
+  it('falls back to light theme for invalid localStorage values', () => {
+    localStorage.setItem('cuentica-theme', 'purple');
+
+    render(
+      <ThemeProvider>
+        <TestComponent />
+      </ThemeProvider>
+    );
+
+    expect(screen.getByTestId('theme-value')).toHaveTextContent('light');
+    expect(document.documentElement.getAttribute('data-theme')).toBe('light');
+  });
+
+  it('throws error when useTheme is used outside ThemeProvider', () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    expect(() => render(<TestComponent />)).toThrow(
+      'useTheme must be used within a ThemeProvider'
+    );
+
+    consoleSpy.mockRestore();
   });
 });

@@ -2,10 +2,15 @@ import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 
 import { App } from './App';
+import { ThemeProvider } from './context/ThemeContext';
 
 describe('App', () => {
   it('renders without crashing', () => {
-    render(<App />);
+    render(
+      <ThemeProvider>
+        <App />
+      </ThemeProvider>
+    );
     expect(screen.getByText('Cuentica')).toBeInTheDocument();
   });
 });

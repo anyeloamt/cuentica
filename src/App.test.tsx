@@ -1,11 +1,22 @@
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 
 import { App } from './App';
 import { ThemeProvider } from './context/ThemeContext';
 
+const mockUseWallets = vi.fn();
+
+vi.mock('./hooks/useWallets', () => ({
+  useWallets: () => mockUseWallets(),
+}));
+
 describe('App', () => {
+  beforeEach(() => {
+    mockUseWallets.mockReset();
+    mockUseWallets.mockReturnValue([]);
+  });
+
   it('renders without crashing', () => {
     render(
       <MemoryRouter>
@@ -25,7 +36,7 @@ describe('App', () => {
         </ThemeProvider>
       </MemoryRouter>
     );
-    expect(screen.getByText(/your wallets will appear here/i)).toBeInTheDocument();
+    expect(screen.getByText(/no wallets yet/i)).toBeInTheDocument();
   });
 
   it('renders WalletDetailPage at /wallet/:id', () => {
@@ -47,7 +58,6 @@ describe('App', () => {
         </ThemeProvider>
       </MemoryRouter>
     );
-    // NotFoundPage redirects to /, so HomePage should render
-    expect(screen.getByText(/your wallets will appear here/i)).toBeInTheDocument();
+    expect(screen.getByText(/no wallets yet/i)).toBeInTheDocument();
   });
 });

@@ -12,6 +12,15 @@ vi.mock('./hooks/useWallets', () => ({
   useWallets: () => mockUseWallets(),
 }));
 
+vi.mock('./hooks/useBudgetItems', () => ({
+  useBudgetItems: () => ({
+    items: [],
+    addItem: vi.fn(),
+    updateItem: vi.fn(),
+    deleteItem: vi.fn(),
+  }),
+}));
+
 describe('App', () => {
   beforeEach(() => {
     mockUseWallets.mockReset();
@@ -54,7 +63,7 @@ describe('App', () => {
         </ThemeProvider>
       </MemoryRouter>
     );
-    expect(screen.getByText(/budget for wallet: abc/i)).toBeInTheDocument();
+    expect(screen.getByText(/no items yet/i)).toBeInTheDocument();
   });
 
   it('redirects /nonexistent to home', () => {

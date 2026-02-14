@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "mcp_bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$TOOL_INPUT\" | grep -q 'git commit'; then br sync --flush-only --quiet 2>/dev/null && git add .beads/issues.jsonl 2>/dev/null; fi; exit 0"
+          }
+        ]
+      }
+    ]
+  }
+}

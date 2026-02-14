@@ -8,8 +8,8 @@ interface BudgetTableProps {
   items: BudgetItem[] | undefined;
   onAddItem: () => Promise<string | undefined>;
   onUpdateItem: (id: string, changes: Partial<BudgetItem>) => void;
-  onDeleteItem: (id: string) => void;
-  onRestoreItem?: (item: BudgetItem) => void;
+  onDeleteItem: (id: string) => Promise<{ ok: boolean }>;
+  onRestoreItem?: (item: BudgetItem) => Promise<{ ok: boolean }>;
 }
 
 export function BudgetTable({
@@ -19,17 +19,20 @@ export function BudgetTable({
   onDeleteItem,
   onRestoreItem,
 }: BudgetTableProps) {
-  const [deletedItem, setDeletedItem] = useState<BudgetItem | null>(null);
+  const [deletedItems, setDeletedItems] = useState<BudgetItem[]>([]);
   const [lastAddedId, setLastAddedId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (deletedItem) {
-      const timer = setTimeout(() => {
-        setDeletedItem(null);
-      }, 5000);
-      return () => clearTimeout(timer);
+    if (deletedItems.length === 0) {
+      return;
     }
-  }, [deletedItem]);
+
+    const timer = setTimeout(() => {
+      setDeletedItems([]);
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [deletedItems]);
 
   const handleAddItem = async () => {
     const id = await onAddItem();
@@ -38,23 +41,44 @@ export function BudgetTable({
     }
   };
 
-  const handleDeleteWithUndo = (id: string) => {
+  const handleDeleteWithUndo = async (id: string) => {
     const item = items?.find((i) => i.id === id);
-    if (item) {
-      setDeletedItem(item);
-      onDeleteItem(id);
+    if (!item) {
+      return;
+    }
+
+    const result = await onDeleteItem(id);
+    if (result.ok) {
+      setDeletedItems((prev) => [...prev, item]);
     }
   };
 
-  const handleUndo = () => {
-    if (deletedItem && onRestoreItem) {
-      onRestoreItem(deletedItem);
-      setDeletedItem(null);
+  const handleUndo = async () => {
+    if (deletedItems.length === 0 || !onRestoreItem) {
+      return;
     }
+
+    const restoreResults = await Promise.all(
+      deletedItems.map(async (item) => ({
+        item,
+        result: await onRestoreItem(item),
+      }))
+    );
+
+    const failedItems = restoreResults
+      .filter(({ result }) => !result.ok)
+      .map(({ item }) => item);
+
+    if (failedItems.length === 0) {
+      setDeletedItems([]);
+      return;
+    }
+
+    setDeletedItems(failedItems);
   };
 
   if (items === undefined) {
-    return <div className="p-4 text-center text-gray-500">Loading...</div>;
+    return <div className="p-4 text-center text-text-secondary">Loading...</div>;
   }
 
   const total = items.reduce((acc, item) => {
@@ -71,7 +95,7 @@ export function BudgetTable({
           </div>
         ) : (
           <div className="flex flex-col">
-            <div className="flex px-2 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-border">
+            <div className="flex px-2 py-2 text-xs font-semibold text-text-secondary uppercase tracking-wider border-b border-border">
               <div className="flex-grow pl-2">Name</div>
               <div className="w-8 text-center">Type</div>
               <div className="w-20 sm:w-24 text-right">Amount</div>
@@ -91,6 +115,7 @@ export function BudgetTable({
         )}
 
         <button
+          type="button"
           onClick={handleAddItem}
           className="mt-6 flex items-center justify-center w-full py-3 border-2 border-dashed border-border rounded-lg text-gray-500 hover:text-gray-700 hover:border-gray-400 transition-colors"
         >
@@ -112,10 +137,19 @@ export function BudgetTable({
         </button>
       </div>
 
-      {deletedItem && (
-        <div className="fixed bottom-16 left-1/2 transform -translate-x-1/2 bg-gray-800 dark:bg-gray-700 text-white px-4 py-3 rounded-lg shadow-lg z-20 flex items-center gap-4 transition-opacity duration-300">
-          <span>Item deleted</span>
+      {deletedItems.length > 0 && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-16 left-1/2 transform -translate-x-1/2 bg-gray-800 dark:bg-gray-700 text-white px-4 py-3 rounded-lg shadow-lg z-20 flex items-center gap-4 transition-opacity duration-300"
+        >
+          <span>
+            {deletedItems.length === 1
+              ? 'Item deleted'
+              : `${deletedItems.length} items deleted`}
+          </span>
           <button
+            type="button"
             onClick={handleUndo}
             className="font-semibold text-accent hover:text-blue-300"
           >
@@ -124,9 +158,9 @@ export function BudgetTable({
         </div>
       )}
 
-      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 p-4 shadow-lg z-10">
+      <div className="fixed bottom-0 left-0 right-0 bg-bg-primary border-t border-border p-4 shadow-lg z-10">
         <div className="max-w-2xl mx-auto flex justify-between items-center text-xl font-bold">
-          <span className="text-gray-600 dark:text-gray-400">Total</span>
+          <span className="text-text-secondary">Total</span>
           <span
             className={
               total >= 0

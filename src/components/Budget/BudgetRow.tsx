@@ -51,11 +51,16 @@ export function BudgetRow({
   }, [item.name, item.amount]);
 
   useEffect(() => {
-    if (autoFocus) {
-      nameInputRef.current?.focus();
+    if (!autoFocus) {
+      return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only on mount
+
+    const frame = requestAnimationFrame(() => {
+      nameInputRef.current?.focus();
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [autoFocus]);
 
   if (!item.id) {
     return null;

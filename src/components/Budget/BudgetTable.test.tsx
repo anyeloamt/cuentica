@@ -6,7 +6,8 @@ import type { BudgetItem } from '../../types';
 import { BudgetTable } from './BudgetTable';
 
 describe('BudgetTable', () => {
-  const mockAddItem = vi.fn();
+  const mockAddItems = vi.fn();
+  const mockTrimRows = vi.fn();
   const mockUpdateItem = vi.fn();
   const mockDeleteItem = vi.fn();
 
@@ -37,7 +38,8 @@ describe('BudgetTable', () => {
     render(
       <BudgetTable
         items={undefined}
-        onAddItem={mockAddItem}
+        onAddItems={mockAddItems}
+        onTrimRows={mockTrimRows}
         onUpdateItem={mockUpdateItem}
         onDeleteItem={mockDeleteItem}
       />
@@ -49,7 +51,8 @@ describe('BudgetTable', () => {
     render(
       <BudgetTable
         items={[]}
-        onAddItem={mockAddItem}
+        onAddItems={mockAddItems}
+        onTrimRows={mockTrimRows}
         onUpdateItem={mockUpdateItem}
         onDeleteItem={mockDeleteItem}
       />
@@ -61,7 +64,8 @@ describe('BudgetTable', () => {
     render(
       <BudgetTable
         items={items}
-        onAddItem={mockAddItem}
+        onAddItems={mockAddItems}
+        onTrimRows={mockTrimRows}
         onUpdateItem={mockUpdateItem}
         onDeleteItem={mockDeleteItem}
       />
@@ -78,14 +82,15 @@ describe('BudgetTable', () => {
     render(
       <BudgetTable
         items={[]}
-        onAddItem={mockAddItem}
+        onAddItems={mockAddItems}
+        onTrimRows={mockTrimRows}
         onUpdateItem={mockUpdateItem}
         onDeleteItem={mockDeleteItem}
       />
     );
 
-    fireEvent.click(screen.getByText('Add item'));
-    expect(mockAddItem).toHaveBeenCalled();
+    fireEvent.click(screen.getByText('+ Add rows'));
+    expect(mockAddItems).toHaveBeenCalled();
   });
 
   it('handles negative total', () => {
@@ -105,7 +110,8 @@ describe('BudgetTable', () => {
     render(
       <BudgetTable
         items={negativeItems}
-        onAddItem={mockAddItem}
+        onAddItems={mockAddItems}
+        onTrimRows={mockTrimRows}
         onUpdateItem={mockUpdateItem}
         onDeleteItem={mockDeleteItem}
       />

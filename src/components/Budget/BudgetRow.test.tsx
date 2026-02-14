@@ -31,21 +31,27 @@ describe('BudgetRow', () => {
   });
 
   it('renders correctly', () => {
-    render(<BudgetRow item={item} onUpdate={mockUpdate} onDelete={mockDelete} />);
+    render(
+      <BudgetRow item={item} rowNumber={1} onUpdate={mockUpdate} onDelete={mockDelete} />
+    );
     expect(screen.getByLabelText('Item name')).toHaveValue('Rent');
     expect(screen.getByLabelText('Amount')).toHaveValue(1000);
     expect(screen.getByLabelText('Toggle type, currently -')).toBeInTheDocument();
   });
 
   it('toggles type immediately', () => {
-    render(<BudgetRow item={item} onUpdate={mockUpdate} onDelete={mockDelete} />);
+    render(
+      <BudgetRow item={item} rowNumber={1} onUpdate={mockUpdate} onDelete={mockDelete} />
+    );
     const toggleBtn = screen.getByLabelText('Toggle type, currently -');
     fireEvent.click(toggleBtn);
     expect(mockUpdate).toHaveBeenCalledWith('i1', { type: '+' });
   });
 
   it('updates name after debounce', () => {
-    render(<BudgetRow item={item} onUpdate={mockUpdate} onDelete={mockDelete} />);
+    render(
+      <BudgetRow item={item} rowNumber={1} onUpdate={mockUpdate} onDelete={mockDelete} />
+    );
     const input = screen.getByLabelText('Item name');
     fireEvent.change(input, { target: { value: 'New Rent' } });
 
@@ -60,7 +66,9 @@ describe('BudgetRow', () => {
   });
 
   it('updates amount after debounce', () => {
-    render(<BudgetRow item={item} onUpdate={mockUpdate} onDelete={mockDelete} />);
+    render(
+      <BudgetRow item={item} rowNumber={1} onUpdate={mockUpdate} onDelete={mockDelete} />
+    );
     const input = screen.getByLabelText('Amount');
     fireEvent.change(input, { target: { value: '2000' } });
 
@@ -75,7 +83,9 @@ describe('BudgetRow', () => {
   });
 
   it('saves immediately on blur', () => {
-    render(<BudgetRow item={item} onUpdate={mockUpdate} onDelete={mockDelete} />);
+    render(
+      <BudgetRow item={item} rowNumber={1} onUpdate={mockUpdate} onDelete={mockDelete} />
+    );
     const input = screen.getByLabelText('Item name');
     fireEvent.change(input, { target: { value: 'Blur Rent' } });
     fireEvent.blur(input);
@@ -87,7 +97,9 @@ describe('BudgetRow', () => {
   });
 
   it('handles delete with confirmation', () => {
-    render(<BudgetRow item={item} onUpdate={mockUpdate} onDelete={mockDelete} />);
+    render(
+      <BudgetRow item={item} rowNumber={1} onUpdate={mockUpdate} onDelete={mockDelete} />
+    );
     const deleteBtn = screen.getByLabelText('Delete item');
     fireEvent.click(deleteBtn);
 
@@ -97,7 +109,9 @@ describe('BudgetRow', () => {
 
   it('does not delete if confirmation cancelled', () => {
     (window.confirm as unknown as ReturnType<typeof vi.fn>).mockReturnValue(false);
-    render(<BudgetRow item={item} onUpdate={mockUpdate} onDelete={mockDelete} />);
+    render(
+      <BudgetRow item={item} rowNumber={1} onUpdate={mockUpdate} onDelete={mockDelete} />
+    );
     const deleteBtn = screen.getByLabelText('Delete item');
     fireEvent.click(deleteBtn);
 

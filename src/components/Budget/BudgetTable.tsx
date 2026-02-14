@@ -4,9 +4,13 @@ import type { BudgetItem } from '../../types';
 
 import { BudgetRow } from './BudgetRow';
 
+type AddItemsResult = { ok: true; ids: string[] } | { ok: false; error: string };
+type TrimResult = { ok: true; count: number } | { ok: false; error: string };
+
 interface BudgetTableProps {
   items: BudgetItem[] | undefined;
-  onAddItem: () => Promise<string | undefined>;
+  onAddItems: () => Promise<AddItemsResult>;
+  onTrimRows: () => Promise<TrimResult>;
   onUpdateItem: (id: string, changes: Partial<BudgetItem>) => void;
   onDeleteItem: (id: string) => Promise<{ ok: boolean }>;
   onRestoreItem?: (item: BudgetItem) => Promise<{ ok: boolean }>;
@@ -14,7 +18,8 @@ interface BudgetTableProps {
 
 export function BudgetTable({
   items,
-  onAddItem,
+  onAddItems,
+  onTrimRows,
   onUpdateItem,
   onDeleteItem,
   onRestoreItem,
@@ -34,11 +39,15 @@ export function BudgetTable({
     return () => clearTimeout(timer);
   }, [deletedItems]);
 
-  const handleAddItem = async () => {
-    const id = await onAddItem();
-    if (id) {
-      setLastAddedId(id);
+  const handleAddItems = async () => {
+    const result = await onAddItems();
+    if (result.ok && result.ids && result.ids.length > 0) {
+      setLastAddedId(result.ids[0]);
     }
+  };
+
+  const handleTrimRows = async () => {
+    await onTrimRows();
   };
 
   const handleDeleteWithUndo = async (id: string) => {
@@ -96,15 +105,17 @@ export function BudgetTable({
         ) : (
           <div className="flex flex-col">
             <div className="flex px-2 py-2 text-xs font-semibold text-text-secondary uppercase tracking-wider border-b border-border">
+              <div className="w-8 text-center flex-shrink-0">#</div>
               <div className="flex-grow pl-2">Name</div>
               <div className="w-8 text-center">Type</div>
               <div className="w-20 sm:w-24 text-right">Amount</div>
               <div className="w-9"></div>
             </div>
-            {items.map((item) => (
+            {items.map((item, index) => (
               <BudgetRow
                 key={item.id}
                 item={item}
+                rowNumber={index + 1}
                 onUpdate={onUpdateItem}
                 onDelete={handleDeleteWithUndo}
                 // eslint-disable-next-line jsx-a11y/no-autofocus
@@ -114,27 +125,42 @@ export function BudgetTable({
           </div>
         )}
 
-        <button
-          type="button"
-          onClick={handleAddItem}
-          className="mt-6 flex items-center justify-center w-full py-3 border-2 border-dashed border-border rounded-lg text-gray-500 hover:text-gray-700 hover:border-gray-400 transition-colors"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={2}
-            stroke="currentColor"
-            className="w-5 h-5 mr-2"
+        <div className="mt-6 flex gap-3">
+          <button
+            type="button"
+            onClick={handleAddItems}
+            className="flex-grow flex items-center justify-center py-3 border-2 border-dashed border-border rounded-lg text-gray-500 hover:text-gray-700 hover:border-gray-400 transition-colors"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M12 4.5v15m7.5-7.5h-15"
-            />
-          </svg>
-          Add item
-        </button>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={2}
+              stroke="currentColor"
+              className="w-5 h-5 mr-2"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 4.5v15m7.5-7.5h-15"
+              />
+            </svg>
+            + Add rows
+          </button>
+
+          {items.length > 0 &&
+            items[items.length - 1].name.trim() === '' &&
+            items[items.length - 1].amount === 0 && (
+              <button
+                type="button"
+                onClick={handleTrimRows}
+                className="px-4 py-3 text-sm font-medium text-text-secondary hover:text-text-primary transition-colors border border-border rounded-lg"
+                title="Remove empty rows from bottom"
+              >
+                Trim
+              </button>
+            )}
+        </div>
       </div>
 
       {deletedItems.length > 0 && (

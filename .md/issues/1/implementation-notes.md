@@ -6,7 +6,7 @@ Scaffolded the Vite + React + TypeScript project with all quality tooling config
 
 ## Key decisions
 
-- **Vite 5 + React 18** pinned (not latest Vite 7/React 19) per ROADMAP.md version requirements
+- **Vite 5 + React 18** via caret ranges (^) locked by package-lock.json (not latest Vite 7/React 19) per ROADMAP.md version requirements
 - **ESLint 8** with `.eslintrc.cjs` format (flat config is ESLint 9+ only)
 - **Single tsconfig.json** instead of project references — simpler for current scope
 - **No path aliases** — keeping relative imports per task constraints

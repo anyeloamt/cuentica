@@ -1,18 +1,31 @@
 import { useState } from 'react';
 
 import { useWallets } from '../../hooks/useWallets';
+import type { Wallet } from '../../types';
 
+import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 import { CreateWalletModal } from './CreateWalletModal';
 import { FloatingActionButton } from './FloatingActionButton';
 import { WalletList } from './WalletList';
 
 export function HomePage(): JSX.Element {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const { createWallet } = useWallets();
+  const [walletToDelete, setWalletToDelete] = useState<Wallet | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const { wallets, createWallet, deleteWallet } = useWallets();
+
+  const handleConfirmDelete = async () => {
+    if (!walletToDelete || !walletToDelete.id) return;
+
+    setIsDeleting(true);
+    await deleteWallet(walletToDelete.id);
+    setIsDeleting(false);
+    setWalletToDelete(null);
+  };
 
   return (
     <>
-      <WalletList />
+      <WalletList wallets={wallets} onDeleteWallet={setWalletToDelete} />
       <FloatingActionButton
         onClick={() => setIsCreateModalOpen(true)}
         label="Add Wallet"
@@ -24,6 +37,13 @@ export function HomePage(): JSX.Element {
           createWallet={createWallet}
         />
       )}
+      <ConfirmDeleteModal
+        isOpen={walletToDelete !== null}
+        walletName={walletToDelete?.name ?? ''}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setWalletToDelete(null)}
+        isDeleting={isDeleting}
+      />
     </>
   );
 }

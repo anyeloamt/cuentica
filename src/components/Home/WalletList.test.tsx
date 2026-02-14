@@ -1,28 +1,18 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import type { Wallet } from '../../types';
 
 import { WalletList } from './WalletList';
 
-const mockUseWallets = vi.fn();
-
-vi.mock('../../hooks/useWallets', () => ({
-  useWallets: () => mockUseWallets(),
-}));
-
 describe('WalletList', () => {
-  beforeEach(() => {
-    mockUseWallets.mockReset();
-  });
+  const mockOnDeleteWallet = vi.fn();
 
   it('renders loading fallback while wallets are undefined', () => {
-    mockUseWallets.mockReturnValue({ wallets: undefined });
-
     render(
       <MemoryRouter>
-        <WalletList />
+        <WalletList wallets={undefined} onDeleteWallet={mockOnDeleteWallet} />
       </MemoryRouter>
     );
 
@@ -30,11 +20,9 @@ describe('WalletList', () => {
   });
 
   it('renders empty fallback when no wallets exist', () => {
-    mockUseWallets.mockReturnValue({ wallets: [] });
-
     render(
       <MemoryRouter>
-        <WalletList />
+        <WalletList wallets={[]} onDeleteWallet={mockOnDeleteWallet} />
       </MemoryRouter>
     );
 
@@ -59,11 +47,9 @@ describe('WalletList', () => {
       },
     ];
 
-    mockUseWallets.mockReturnValue({ wallets });
-
     render(
       <MemoryRouter>
-        <WalletList />
+        <WalletList wallets={wallets} onDeleteWallet={mockOnDeleteWallet} />
       </MemoryRouter>
     );
 
@@ -91,11 +77,9 @@ describe('WalletList', () => {
       },
     ];
 
-    mockUseWallets.mockReturnValue({ wallets });
-
     render(
       <MemoryRouter>
-        <WalletList />
+        <WalletList wallets={wallets} onDeleteWallet={mockOnDeleteWallet} />
       </MemoryRouter>
     );
 
@@ -104,5 +88,28 @@ describe('WalletList', () => {
       'href',
       '/wallet/wallet-2'
     );
+  });
+
+  it('calls onDeleteWallet when delete button is clicked', () => {
+    const wallets: Wallet[] = [
+      {
+        id: 'wallet-1',
+        name: 'Home',
+        order: 1,
+        createdAt: 1,
+        updatedAt: 1,
+      },
+    ];
+
+    render(
+      <MemoryRouter>
+        <WalletList wallets={wallets} onDeleteWallet={mockOnDeleteWallet} />
+      </MemoryRouter>
+    );
+
+    const deleteButton = screen.getByRole('button', { name: /delete home/i });
+    fireEvent.click(deleteButton);
+
+    expect(mockOnDeleteWallet).toHaveBeenCalledWith(wallets[0]);
   });
 });

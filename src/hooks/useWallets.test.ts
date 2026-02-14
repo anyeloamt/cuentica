@@ -9,6 +9,11 @@ const mockToArray = vi.fn();
 const mockLast = vi.fn();
 const mockAdd = vi.fn();
 const mockOrderBy = vi.fn();
+const mockTransaction = vi.fn();
+const mockGet = vi.fn();
+const mockDeleteWallet = vi.fn();
+const mockWhere = vi.fn();
+const mockDeleteBudgetItems = vi.fn();
 
 vi.mock('dexie-react-hooks', () => ({
   useLiveQuery: (querier: () => unknown) => querier(),
@@ -19,7 +24,13 @@ vi.mock('../lib/db', () => ({
     wallets: {
       orderBy: (...args: unknown[]) => mockOrderBy(...args),
       add: (...args: unknown[]) => mockAdd(...args),
+      get: (...args: unknown[]) => mockGet(...args),
+      delete: (...args: unknown[]) => mockDeleteWallet(...args),
     },
+    budgetItems: {
+      where: (...args: unknown[]) => mockWhere(...args),
+    },
+    transaction: (...args: unknown[]) => mockTransaction(...args),
   },
 }));
 
@@ -30,7 +41,21 @@ describe('useWallets', () => {
       toArray: mockToArray,
       last: mockLast,
     });
+    // Mock where().delete() chain
+    mockWhere.mockReturnValue({
+      delete: mockDeleteBudgetItems,
+    });
+    // Mock transaction to immediately execute the callback (last argument)
+    mockTransaction.mockImplementation((...args) => {
+      const callback = args[args.length - 1];
+      if (typeof callback === 'function') {
+        return callback();
+      }
+      return undefined;
+    });
   });
+
+  // ... existing tests ...
 
   it('reactively updates when a new wallet is added', async () => {
     const wallets: Wallet[] = [
@@ -131,6 +156,54 @@ describe('useWallets', () => {
       const createResult = await result.current.createWallet('Failed Wallet');
 
       expect(createResult).toEqual({ ok: false, error: 'db-error' });
+    });
+  });
+
+  describe('deleteWallet', () => {
+    it('deletes wallet and associated budget items', async () => {
+      mockToArray.mockReturnValue([]);
+      mockGet.mockResolvedValue({ id: 'w1' }); // Wallet exists
+
+      const { result } = renderHook(() => useWallets());
+
+      const deleteResult = await result.current.deleteWallet('w1');
+
+      expect(deleteResult).toEqual({ ok: true });
+      expect(mockTransaction).toHaveBeenCalledWith(
+        'rw',
+        expect.anything(), // db.wallets
+        expect.anything(), // db.budgetItems
+        expect.any(Function)
+      );
+      expect(mockGet).toHaveBeenCalledWith('w1');
+      expect(mockWhere).toHaveBeenCalledWith({ walletId: 'w1' });
+      expect(mockDeleteBudgetItems).toHaveBeenCalled();
+      expect(mockDeleteWallet).toHaveBeenCalledWith('w1');
+    });
+
+    it('returns not-found error if wallet does not exist', async () => {
+      mockToArray.mockReturnValue([]);
+      mockGet.mockResolvedValue(undefined); // Wallet does not exist
+
+      const { result } = renderHook(() => useWallets());
+
+      const deleteResult = await result.current.deleteWallet('w1');
+
+      expect(deleteResult).toEqual({ ok: false, error: 'not-found' });
+      expect(mockGet).toHaveBeenCalledWith('w1');
+      expect(mockDeleteWallet).not.toHaveBeenCalled();
+      expect(mockDeleteBudgetItems).not.toHaveBeenCalled();
+    });
+
+    it('returns db-error when transaction fails', async () => {
+      mockToArray.mockReturnValue([]);
+      mockTransaction.mockRejectedValue(new Error('Transaction failed'));
+
+      const { result } = renderHook(() => useWallets());
+
+      const deleteResult = await result.current.deleteWallet('w1');
+
+      expect(deleteResult).toEqual({ ok: false, error: 'db-error' });
     });
   });
 });

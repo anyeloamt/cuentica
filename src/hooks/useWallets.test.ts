@@ -6,6 +6,8 @@ import type { Wallet } from '../types';
 import { useWallets } from './useWallets';
 
 const mockToArray = vi.fn();
+const mockLast = vi.fn();
+const mockAdd = vi.fn();
 const mockOrderBy = vi.fn();
 
 vi.mock('dexie-react-hooks', () => ({
@@ -16,17 +18,52 @@ vi.mock('../lib/db', () => ({
   db: {
     wallets: {
       orderBy: (...args: unknown[]) => mockOrderBy(...args),
+      add: (...args: unknown[]) => mockAdd(...args),
     },
   },
 }));
 
 describe('useWallets', () => {
   beforeEach(() => {
-    mockToArray.mockReset();
-    mockOrderBy.mockReset();
+    vi.clearAllMocks();
     mockOrderBy.mockReturnValue({
-      toArray: (...args: unknown[]) => mockToArray(...args),
+      toArray: mockToArray,
+      last: mockLast,
     });
+  });
+
+  it('reactively updates when a new wallet is added', async () => {
+    const wallets: Wallet[] = [
+      {
+        id: 'w1',
+        name: 'Bills',
+        order: 1,
+        createdAt: 1,
+        updatedAt: 1,
+      },
+    ];
+
+    mockToArray.mockReturnValue(wallets);
+
+    const { result } = renderHook(() => useWallets());
+
+    expect(result.current.wallets).toEqual(wallets);
+  });
+
+  it('returns undefined when wallets are not loaded', () => {
+    mockToArray.mockReturnValue(undefined);
+
+    const { result } = renderHook(() => useWallets());
+
+    expect(result.current.wallets).toBeUndefined();
+  });
+
+  it('returns an empty array when no wallets exist', () => {
+    mockToArray.mockReturnValue([]);
+
+    const { result } = renderHook(() => useWallets());
+
+    expect(result.current.wallets).toEqual([]);
   });
 
   it('queries wallets ordered by order', () => {
@@ -38,28 +75,62 @@ describe('useWallets', () => {
     expect(mockToArray).toHaveBeenCalledTimes(1);
   });
 
-  it('returns wallets from the live query in order', () => {
-    const wallets: Wallet[] = [
-      {
-        id: 'w1',
-        name: 'Bills',
-        order: 1,
-        createdAt: 1,
-        updatedAt: 1,
-      },
-      {
-        id: 'w2',
-        name: 'Groceries',
-        order: 2,
-        createdAt: 2,
-        updatedAt: 2,
-      },
-    ];
+  describe('createWallet', () => {
+    it('creates a wallet with correct properties', async () => {
+      mockToArray.mockReturnValue([]);
+      mockLast.mockResolvedValue({ order: 1 }); // Max order is 1
 
-    mockToArray.mockReturnValue(wallets);
+      const { result } = renderHook(() => useWallets());
 
-    const { result } = renderHook(() => useWallets());
+      const createResult = await result.current.createWallet('New Wallet');
 
-    expect(result.current).toEqual(wallets);
+      expect(createResult).toEqual({ ok: true });
+      expect(mockAdd).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'New Wallet',
+          order: 2, // 1 + 1
+          id: expect.any(String),
+          createdAt: expect.any(Number),
+          updatedAt: expect.any(Number),
+        })
+      );
+    });
+
+    it('handles first wallet creation (order 0)', async () => {
+      mockToArray.mockReturnValue([]);
+      mockLast.mockResolvedValue(undefined); // No existing wallets
+
+      const { result } = renderHook(() => useWallets());
+
+      await result.current.createWallet('First Wallet');
+
+      expect(mockAdd).toHaveBeenCalledWith(
+        expect.objectContaining({
+          order: 0,
+        })
+      );
+    });
+
+    it('rejects empty name', async () => {
+      mockToArray.mockReturnValue([]);
+
+      const { result } = renderHook(() => useWallets());
+
+      const createResult = await result.current.createWallet('   ');
+
+      expect(createResult).toEqual({ ok: false, error: 'empty-name' });
+      expect(mockAdd).not.toHaveBeenCalled();
+    });
+
+    it('returns db-error when dexie operation fails', async () => {
+      mockToArray.mockReturnValue([]);
+      mockLast.mockRejectedValue(new Error('Dexie error'));
+
+      const { result } = renderHook(() => useWallets());
+
+      const createResult = await result.current.createWallet('Failed Wallet');
+
+      expect(createResult).toEqual({ ok: false, error: 'db-error' });
+    });
   });
 });

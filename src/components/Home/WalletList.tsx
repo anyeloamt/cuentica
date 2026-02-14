@@ -45,7 +45,7 @@ export function WalletList({ wallets, onDeleteWallet }: WalletListProps): JSX.El
               onDeleteWallet(wallet);
             }}
             aria-label={`Delete ${wallet.name}`}
-            className="absolute top-2 right-2 p-2 text-gray-400 hover:text-red-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+            className="absolute top-2 right-2 p-2 text-gray-400 hover:text-red-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

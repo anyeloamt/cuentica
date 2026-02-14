@@ -25,7 +25,7 @@ describe('App', () => {
         </ThemeProvider>
       </MemoryRouter>
     );
-    expect(screen.getByRole('heading', { name: /wallets/i })).toBeInTheDocument();
+    expect(screen.getByText(/your wallets will appear here/i)).toBeInTheDocument();
   });
 
   it('renders WalletDetailPage at /wallet/:id', () => {
@@ -48,6 +48,6 @@ describe('App', () => {
       </MemoryRouter>
     );
     // NotFoundPage redirects to /, so HomePage should render
-    expect(screen.getByRole('heading', { name: /wallets/i })).toBeInTheDocument();
+    expect(screen.getByText(/your wallets will appear here/i)).toBeInTheDocument();
   });
 });

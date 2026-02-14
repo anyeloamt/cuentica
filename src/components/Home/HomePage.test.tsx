@@ -101,15 +101,17 @@ describe('HomePage', () => {
     await user.click(screen.getByRole('button', { name: /add wallet/i }));
 
     const input = screen.getByLabelText(/wallet name/i);
+    await waitFor(() => expect(input).toHaveFocus());
+
     await user.type(input, 'New Wallet');
 
     await user.click(screen.getByRole('button', { name: /^create$/i }));
 
-    expect(mockCreateWallet).toHaveBeenCalledWith('New Wallet');
-
     await waitFor(() => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
+
+    expect(mockCreateWallet).toHaveBeenCalledWith('New Wallet');
   });
 
   it('shows error when createWallet fails', async () => {
@@ -125,11 +127,17 @@ describe('HomePage', () => {
     await user.click(screen.getByRole('button', { name: /add wallet/i }));
 
     const input = screen.getByLabelText(/wallet name/i);
+    await waitFor(() => expect(input).toHaveFocus());
+
     await user.type(input, 'Valid Name But Mock Fail');
 
     await user.click(screen.getByRole('button', { name: /^create$/i }));
 
-    expect(screen.getByText(/wallet name cannot be empty/i)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(/wallet name cannot be empty/i)).toBeInTheDocument();
+    });
+
+    expect(screen.getByRole('button', { name: /^create$/i })).not.toBeDisabled();
   });
 
   it('disables create button when input is empty', async () => {
@@ -141,6 +149,11 @@ describe('HomePage', () => {
     );
 
     await user.click(screen.getByRole('button', { name: /add wallet/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('dialog', { name: /new wallet/i })).toBeInTheDocument();
+    });
+
     const createButton = screen.getByRole('button', { name: /^create$/i });
 
     expect(createButton).toBeDisabled();

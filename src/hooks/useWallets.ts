@@ -3,7 +3,9 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../lib/db';
 import type { Wallet } from '../types';
 
-export type CreateWalletResult = { ok: true } | { ok: false; error: 'empty-name' };
+export type CreateWalletResult =
+  | { ok: true }
+  | { ok: false; error: 'empty-name' | 'db-error' };
 
 export function useWallets(): {
   wallets: Wallet[] | undefined;
@@ -17,19 +19,23 @@ export function useWallets(): {
       return { ok: false, error: 'empty-name' };
     }
 
-    const maxOrderWallet = await db.wallets.orderBy('order').last();
-    const newOrder = (maxOrderWallet?.order ?? -1) + 1;
+    try {
+      const maxOrderWallet = await db.wallets.orderBy('order').last();
+      const newOrder = (maxOrderWallet?.order ?? -1) + 1;
 
-    const newWallet: Wallet = {
-      id: crypto.randomUUID(),
-      name: trimmedName,
-      order: newOrder,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
+      const newWallet: Wallet = {
+        id: crypto.randomUUID(),
+        name: trimmedName,
+        order: newOrder,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
 
-    await db.wallets.add(newWallet);
-    return { ok: true };
+      await db.wallets.add(newWallet);
+      return { ok: true };
+    } catch (error) {
+      return { ok: false, error: 'db-error' };
+    }
   };
 
   return { wallets, createWallet };

@@ -5,6 +5,7 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { HomePage } from './HomePage';
 import { NotFoundPage } from './NotFoundPage';
 
+const mockCreateWallet = vi.fn().mockResolvedValue({ ok: true });
 const mockUseWallets = vi.fn();
 
 vi.mock('../../hooks/useWallets', () => ({
@@ -14,7 +15,7 @@ vi.mock('../../hooks/useWallets', () => ({
 describe('NotFoundPage', () => {
   beforeEach(() => {
     mockUseWallets.mockReset();
-    mockUseWallets.mockReturnValue([]);
+    mockUseWallets.mockReturnValue({ wallets: [], createWallet: mockCreateWallet });
   });
 
   it('redirects to home when navigating to nonexistent route', () => {

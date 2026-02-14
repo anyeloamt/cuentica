@@ -1,30 +1,22 @@
-import { type FormEvent, useEffect, useRef, useState } from 'react';
+import { type FormEvent, useRef, useState } from 'react';
 
-import { useWallets } from '../../hooks/useWallets';
+import type { CreateWalletResult } from '../../hooks/useWallets';
 
 interface CreateWalletModalProps {
   isOpen: boolean;
   onClose: () => void;
+  createWallet: (name: string) => Promise<CreateWalletResult>;
 }
 
 export function CreateWalletModal({
   isOpen,
   onClose,
+  createWallet,
 }: CreateWalletModalProps): JSX.Element | null {
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { createWallet } = useWallets();
-
-  useEffect(() => {
-    if (isOpen) {
-      // Focus after a short delay to ensure modal is rendered
-      setTimeout(() => inputRef.current?.focus(), 50);
-      setName('');
-      setError(null);
-    }
-  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -35,16 +27,22 @@ export function CreateWalletModal({
     setIsSubmitting(true);
     setError(null);
 
-    const result = await createWallet(name);
+    try {
+      const result = await createWallet(name);
 
-    if (result.ok) {
-      onClose();
-    } else {
-      if (result.error === 'empty-name') {
-        setError('Wallet name cannot be empty');
+      if (result.ok) {
+        onClose();
+      } else {
+        if (result.error === 'empty-name') {
+          setError('Wallet name cannot be empty');
+        } else if (result.error === 'db-error') {
+          setError('Failed to create wallet. Please try again.');
+        }
+        setIsSubmitting(false);
       }
+    } catch {
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   };
 
   return (
@@ -76,6 +74,8 @@ export function CreateWalletModal({
               placeholder="e.g., Monthly Expenses"
               className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-colors"
               autoComplete="off"
+              // eslint-disable-next-line jsx-a11y/no-autofocus
+              autoFocus
             />
             {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
           </div>

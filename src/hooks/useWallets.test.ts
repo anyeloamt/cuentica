@@ -121,5 +121,16 @@ describe('useWallets', () => {
       expect(createResult).toEqual({ ok: false, error: 'empty-name' });
       expect(mockAdd).not.toHaveBeenCalled();
     });
+
+    it('returns db-error when dexie operation fails', async () => {
+      mockToArray.mockReturnValue([]);
+      mockLast.mockRejectedValue(new Error('Dexie error'));
+
+      const { result } = renderHook(() => useWallets());
+
+      const createResult = await result.current.createWallet('Failed Wallet');
+
+      expect(createResult).toEqual({ ok: false, error: 'db-error' });
+    });
   });
 });

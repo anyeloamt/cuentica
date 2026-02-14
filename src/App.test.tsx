@@ -5,6 +5,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { App } from './App';
 import { ThemeProvider } from './context/ThemeContext';
 
+const mockCreateWallet = vi.fn().mockResolvedValue({ ok: true });
 const mockUseWallets = vi.fn();
 
 vi.mock('./hooks/useWallets', () => ({
@@ -14,7 +15,7 @@ vi.mock('./hooks/useWallets', () => ({
 describe('App', () => {
   beforeEach(() => {
     mockUseWallets.mockReset();
-    mockUseWallets.mockReturnValue([]);
+    mockUseWallets.mockReturnValue({ wallets: [], createWallet: mockCreateWallet });
   });
 
   it('renders without crashing', () => {

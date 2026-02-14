@@ -40,6 +40,74 @@ export function useBudgetItems(walletId: string) {
     }
   };
 
+  const addItems = async () => {
+    try {
+      const lastItem = await db.budgetItems
+        .where('walletId')
+        .equals(walletId)
+        .reverse()
+        .sortBy('order')
+        .then((items) => items[0]);
+
+      let nextOrder = (lastItem?.order ?? 0) + 1000;
+      const newItems: BudgetItem[] = [];
+      const ids: string[] = [];
+
+      for (let i = 0; i < 5; i++) {
+        const id = crypto.randomUUID();
+        ids.push(id);
+        newItems.push({
+          id,
+          walletId,
+          order: nextOrder,
+          name: '',
+          type: '-',
+          amount: 0,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          syncStatus: 'pending',
+        });
+        nextOrder += 1000;
+      }
+
+      await db.budgetItems.bulkAdd(newItems);
+      return { ok: true as const, ids };
+    } catch (error) {
+      console.error('Failed to add budget items:', error);
+      return { ok: false as const, error: 'db-error' };
+    }
+  };
+
+  const trimEmptyRows = async () => {
+    try {
+      const allItems = await db.budgetItems
+        .where('walletId')
+        .equals(walletId)
+        .sortBy('order');
+
+      const idsToDelete: string[] = [];
+
+      for (let i = allItems.length - 1; i >= 0; i--) {
+        const item = allItems[i];
+        if (item.name.trim() === '' && item.amount === 0 && item.id) {
+          idsToDelete.push(item.id);
+        } else {
+          break;
+        }
+      }
+
+      if (idsToDelete.length > 0) {
+        await db.budgetItems.bulkDelete(idsToDelete);
+        return { ok: true as const, count: idsToDelete.length };
+      }
+
+      return { ok: true as const, count: 0 };
+    } catch (error) {
+      console.error('Failed to trim budget items:', error);
+      return { ok: false as const, error: 'db-error' };
+    }
+  };
+
   const updateItem = async (id: string, changes: Partial<BudgetItem>) => {
     try {
       const count = await db.budgetItems.update(id, {
@@ -79,5 +147,5 @@ export function useBudgetItems(walletId: string) {
     }
   };
 
-  return { items, addItem, updateItem, deleteItem, restoreItem };
+  return { items, addItem, addItems, trimEmptyRows, updateItem, deleteItem, restoreItem };
 }

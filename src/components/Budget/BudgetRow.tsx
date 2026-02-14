@@ -4,12 +4,19 @@ import type { BudgetItem } from '../../types';
 
 interface BudgetRowProps {
   item: BudgetItem;
+  rowNumber: number;
   onUpdate: (id: string, changes: Partial<BudgetItem>) => void;
   onDelete: (id: string) => void;
   autoFocus?: boolean;
 }
 
-export function BudgetRow({ item, onUpdate, onDelete, autoFocus }: BudgetRowProps) {
+export function BudgetRow({
+  item,
+  rowNumber,
+  onUpdate,
+  onDelete,
+  autoFocus,
+}: BudgetRowProps) {
   // Local state for immediate feedback
   const [name, setName] = useState(item.name);
   const [amount, setAmount] = useState(item.amount === 0 ? '' : item.amount.toString());
@@ -105,6 +112,9 @@ export function BudgetRow({ item, onUpdate, onDelete, autoFocus }: BudgetRowProp
       }`}
       role="row"
     >
+      <div className="text-xs text-text-secondary w-8 text-center flex-shrink-0 font-mono">
+        {rowNumber}
+      </div>
       <div className="flex-grow min-w-0">
         <input
           type="text"

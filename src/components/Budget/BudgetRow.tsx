@@ -118,7 +118,7 @@ export function BudgetRow({
 
   return (
     <div
-      className={`flex items-center gap-2 py-2 border-b border-border ${
+      className={`flex items-center gap-2 py-2 min-h-[44px] border-b border-border ${
         item.type === '+'
           ? 'border-l-4 border-l-green-500 pl-2'
           : 'border-l-4 border-l-red-500 pl-2'
@@ -144,14 +144,18 @@ export function BudgetRow({
       <button
         type="button"
         onClick={toggleType}
-        className={`w-8 h-8 flex items-center justify-center rounded-full font-bold text-lg transition-colors ${
-          item.type === '+'
-            ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
-            : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
-        }`}
+        className="min-w-[44px] min-h-[44px] flex items-center justify-center"
         aria-label={`Toggle type, currently ${item.type}`}
       >
-        {item.type}
+        <span
+          className={`w-8 h-8 flex items-center justify-center rounded-full font-bold text-lg transition-colors ${
+            item.type === '+'
+              ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
+              : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
+          }`}
+        >
+          {item.type}
+        </span>
       </button>
 
       <div className="w-20 sm:w-24">
@@ -170,7 +174,7 @@ export function BudgetRow({
       <button
         type="button"
         onClick={handleDelete}
-        className="text-gray-400 hover:text-red-500 p-2 transition-colors"
+        className="text-gray-400 hover:text-red-500 p-3 transition-colors"
         aria-label="Delete item"
       >
         <svg

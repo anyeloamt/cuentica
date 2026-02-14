@@ -15,7 +15,13 @@ vi.mock('../../hooks/useWallets', () => ({
 describe('NotFoundPage', () => {
   beforeEach(() => {
     mockUseWallets.mockReset();
-    mockUseWallets.mockReturnValue({ wallets: [], createWallet: mockCreateWallet });
+    mockUseWallets.mockReturnValue({
+      wallets: [],
+      createWallet: mockCreateWallet,
+      deleteWallet: vi.fn(),
+      renameWallet: vi.fn(),
+      reorderWallet: vi.fn(),
+    });
   });
 
   it('redirects to home when navigating to nonexistent route', () => {

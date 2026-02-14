@@ -65,5 +65,15 @@ export function useBudgetItems(walletId: string) {
     }
   };
 
-  return { items, addItem, updateItem, deleteItem };
+  const restoreItem = async (item: BudgetItem) => {
+    try {
+      await db.budgetItems.add(item);
+      return { ok: true };
+    } catch (error) {
+      console.error('Failed to restore budget item:', error);
+      return { ok: false, error: 'db-error' };
+    }
+  };
+
+  return { items, addItem, updateItem, deleteItem, restoreItem };
 }

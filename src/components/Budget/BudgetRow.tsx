@@ -6,9 +6,10 @@ interface BudgetRowProps {
   item: BudgetItem;
   onUpdate: (id: string, changes: Partial<BudgetItem>) => void;
   onDelete: (id: string) => void;
+  autoFocus?: boolean;
 }
 
-export function BudgetRow({ item, onUpdate, onDelete }: BudgetRowProps) {
+export function BudgetRow({ item, onUpdate, onDelete, autoFocus }: BudgetRowProps) {
   // Local state for immediate feedback
   const [name, setName] = useState(item.name);
   const [amount, setAmount] = useState(item.amount === 0 ? '' : item.amount.toString());
@@ -79,14 +80,12 @@ export function BudgetRow({ item, onUpdate, onDelete }: BudgetRowProps) {
   };
 
   const handleDelete = () => {
-    if (confirm('Delete this item?')) {
-      onDelete(item.id!);
-    }
+    onDelete(item.id!);
   };
 
   return (
     <div
-      className={`flex items-center gap-2 py-2 border-b border-gray-100 dark:border-gray-800 ${
+      className={`flex items-center gap-2 py-2 border-b border-border ${
         item.type === '+'
           ? 'border-l-4 border-l-green-500 pl-2'
           : 'border-l-4 border-l-red-500 pl-2'
@@ -97,6 +96,8 @@ export function BudgetRow({ item, onUpdate, onDelete }: BudgetRowProps) {
         <input
           type="text"
           value={name}
+          // eslint-disable-next-line jsx-a11y/no-autofocus
+          autoFocus={autoFocus}
           onChange={handleNameChange}
           onBlur={handleBlur}
           placeholder="Item name"

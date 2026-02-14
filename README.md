@@ -4,26 +4,37 @@
 
 Cuentica is designed with radical simplicity in mind. If it takes more than 3 seconds to understand how to do something, we failed.
 
-## ✨ Features
+## Features
 
-- 📱 **Offline-first PWA** - Works completely without internet after the first load.
-- 💰 **Wallet-based Budgeting** - Organize your expenses and income into simple "wallets".
-- 📊 **Radical Simplicity** - 3-column table (name, sign, amount) designed for high-speed input.
-- 📄 **PDF Export** - Generate clean reports and share them via WhatsApp, email, or other apps using the Web Share API.
-- 🎨 **Light/Dark Theme** - Automatic system theme detection with manual toggle and persistence.
-- 🚀 **Zero Friction** - No login required (for Phase 1), no ads, no onboarding.
+**Implemented:**
 
-## 🛠 Tech Stack
+- **Offline-first PWA** - Works completely without internet after the first load. Includes install prompt and auto-update notification.
+- **Wallet Management** - Create, rename, reorder, and delete wallets with confirmation. Data persists in IndexedDB via Dexie.js.
+- **Light/Dark Theme** - Manual toggle with localStorage persistence. Theme-aware meta color for PWA.
+- **Installable** - Full PWA with service worker precaching, install prompt, and reload-on-update prompt.
+- **CI/CD** - GitHub Actions pipeline runs lint, typecheck, tests, and build on every push/PR.
 
-- **React 18.3+**
-- **TypeScript 5.7+**
-- **Vite 5.4+** (Build tool)
-- **Dexie.js 4.3+** (Elegant IndexedDB wrapper)
-- **jsPDF** (Client-side PDF generation)
-- **vite-plugin-pwa** (Service Worker and PWA support)
-- **Vitest + React Testing Library** (Testing framework)
+**Coming Soon (Phase 1 remaining):**
 
-## 🚀 Getting Started
+- Budget table with inline editing (3-column: name, +/-, amount)
+- Live total footer (+income -expenses = balance)
+- PDF export via jsPDF + Web Share API
+- Vercel deployment
+
+## Tech Stack
+
+| Layer     | Technology                     | Version      |
+| --------- | ------------------------------ | ------------ |
+| Framework | React                          | 18.3+        |
+| Language  | TypeScript                     | 5.7+         |
+| Build     | Vite                           | 5.4+         |
+| Styling   | Tailwind CSS                   | 4.1+         |
+| Local DB  | Dexie.js                       | 4.3+         |
+| PWA       | vite-plugin-pwa (Workbox)      | 0.17+        |
+| Testing   | Vitest + React Testing Library | 1.6+ / 14.3+ |
+| CI        | GitHub Actions                 | -            |
+
+## Getting Started
 
 ### Prerequisites
 
@@ -32,21 +43,13 @@ Cuentica is designed with radical simplicity in mind. If it takes more than 3 se
 
 ### Installation
 
-1. Clone the repository:
-
-   ```bash
-   git clone https://github.com/anyeloamt/cuentica.git
-   cd cuentica
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+```bash
+git clone https://github.com/anyeloamt/cuentica.git
+cd cuentica
+npm install
+```
 
 ### Development
-
-Start the development server:
 
 ```bash
 npm run dev
@@ -54,72 +57,99 @@ npm run dev
 
 ### Build
 
-Create a production-ready build:
-
 ```bash
-npm run build
+npm run build        # Production build (includes typecheck)
+npm run preview      # Preview production build locally
 ```
 
-Preview the production build locally:
+## Available Scripts
+
+| Script                  | Description                      |
+| ----------------------- | -------------------------------- |
+| `npm run dev`           | Start Vite dev server            |
+| `npm run build`         | Typecheck + production build     |
+| `npm run preview`       | Preview production build locally |
+| `npm run lint`          | ESLint (zero warnings enforced)  |
+| `npm run typecheck`     | `tsc --noEmit`                   |
+| `npm test`              | Vitest (unit tests)              |
+| `npm run test:coverage` | Vitest with v8 coverage          |
+| `npm run format`        | Prettier                         |
+
+### Verification (run after code changes)
 
 ```bash
-npm run preview
+npm run lint && npm run typecheck && npm test
 ```
 
-## 📜 Available Scripts
+## Project Structure
 
-- `npm run dev` - Start Vite dev server.
-- `npm run build` - Production build (runs type checking before building).
-- `npm run preview` - Preview production build locally.
-- `npm run lint` - Run ESLint to find and fix code style issues.
-- `npm run typecheck` - Run TypeScript compiler check without emitting files.
-- `npm test` - Run unit and integration tests.
-- `npm run test:coverage` - Run tests and generate coverage reports.
-- `npm run format` - Format code with Prettier.
+```
+src/
+├── components/           # UI components (JSX only, no business logic)
+│   ├── Layout/           # AppLayout, Header, BottomTotal, ReloadPrompt, InstallPrompt
+│   ├── Home/             # HomePage, WalletList, CreateWalletModal, ConfirmDeleteModal, FAB
+│   ├── Budget/           # WalletDetailPage (stub - Sprint 1.3)
+│   ├── Export/           # (planned)
+│   └── Settings/         # ThemeToggle
+├── hooks/                # Custom hooks (stateful logic, side effects)
+│   ├── useWallets.ts     # Wallet CRUD with discriminated union results
+│   ├── useWalletName.ts  # Single wallet name lookup
+│   ├── useInstallPrompt.ts
+│   └── usePwaUpdatePrompt.ts
+├── lib/                  # Pure functions, DB config
+│   └── db.ts             # Dexie.js schema v1
+├── context/              # Shared state providers
+│   └── ThemeContext.tsx   # Light/dark with localStorage
+├── types/                # TypeScript interfaces
+│   └── index.ts          # SyncableEntity, Wallet, BudgetItem
+└── styles/               # Tailwind CSS
+```
 
-## 📁 Project Structure
+**Dependency direction**: Components -> Hooks -> Lib -> Types (never reverse).
 
-The project follows a feature-based architecture to ensure scalability and maintainability:
+For full architecture rules, see [AGENTS.md](./AGENTS.md).
 
-- `src/components/`: UI components (purely for rendering, no business logic).
-- `src/hooks/`: Custom hooks for stateful logic and side effects.
-- `src/lib/`: Pure functions, database configuration, and external API calls.
-- `src/context/`: React context providers for shared state.
-- `src/types/`: TypeScript interfaces and global type definitions.
+## Architecture
 
-For a detailed look at the architecture and coding rules, see [AGENTS.md](./AGENTS.md).
+- **Feature-based**: Clear layer separation with enforced dependency direction.
+- **Offline-first PWA**: Workbox precaching (via vite-plugin-pwa) + Dexie.js for local data.
+- **No backend**: All data stays on the user's device (Phase 1).
+- **Discriminated unions**: Hook return types use `{ ok: true } | { ok: false; error: '...' }` for explicit error handling.
 
-## 🏗 Architecture
+## Testing
 
-- **Feature-based Architecture**: Clear dependency direction (Components → Hooks → Lib → Types).
-- **Offline-first PWA**: Leverages Workbox (via vite-plugin-pwa) for caching and Dexie.js for local data persistence.
-- **No Backend Required**: In its current phase, all data remains strictly on the user's device.
+- **Framework**: Vitest + React Testing Library + fake-indexeddb
+- **Philosophy**: Test behavior (what the user sees), not implementation.
+- **Co-location**: Tests live next to their source files (`Component.test.tsx`).
+- **Mocking**: Dexie.js mocked via fake-indexeddb for unit tests.
 
-## 🧪 Development Guidelines
-
-- **PWA Testing**: Always verify offline functionality by running `npm run build && npm run preview` and testing in airplane mode.
-- **Performance**: Maintain a Lighthouse PWA score > 95.
-- **Testing Philosophy**: We prioritize testing user behavior over internal implementation details.
-
-## 🗺 Roadmap
+## Roadmap
 
 See [ROADMAP.md](./ROADMAP.md) for the full delivery plan.
 
-- **Phase 1**: Local MVP (Current) - Focus on core budgeting and PDF export.
-- **Phase 2**: Sync & Auth - Multi-device synchronization via Supabase.
-- **Phase 3**: Social & Power Features - Shared links and advanced organization.
+| Phase       | Status      | Focus                                         |
+| ----------- | ----------- | --------------------------------------------- |
+| **Phase 1** | In Progress | Local MVP - wallets, budget table, PDF export |
+| **Phase 2** | Planned     | Sync & Auth via Supabase                      |
+| **Phase 3** | Planned     | Social features, advanced export              |
+| **Phase 4** | TBD         | Agenda feature                                |
 
-## 🤝 Contributing
+## Contributing
 
-We welcome contributions! Please refer to [AGENTS.md](./AGENTS.md) for detailed coding guidelines.
+See [AGENTS.md](./AGENTS.md) for coding guidelines.
 
-- Use **Conventional Commits** (`feat:`, `fix:`, `docs:`, `test:`, etc.).
-- Ensure that `npm run lint`, `npm run typecheck`, and `npm test` all pass before opening a Pull Request.
+- **Conventional Commits**: `feat:`, `fix:`, `chore:`, `refactor:`, `docs:`, `test:`
+- Ensure `npm run lint && npm run typecheck && npm test` all pass before opening a PR.
 
-## 📄 License
+## License
 
 MIT
 
-## 📊 Status
+## Status
 
-🚧 **Phase 1 - Local MVP** (Pre-MVP, in active development)
+**Phase 1 - Local MVP** (in active development)
+
+- Sprint 1.1 (Foundation) ........... Done
+- Sprint 1.2 (Wallets) .............. Done
+- Sprint 1.3 (Budget Table) ......... Next
+- Sprint 1.4 (PDF + Polish) ......... Pending

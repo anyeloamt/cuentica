@@ -1,6 +1,12 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
   <head>
+    <script>
+      (function () {
+        var t = localStorage.getItem('cuentica-theme') || 'light';
+        document.documentElement.setAttribute('data-theme', t);
+      })();
+    </script>
     <meta charset="UTF-8" />
     <link rel="icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />

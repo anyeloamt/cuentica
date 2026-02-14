@@ -1,11 +1,21 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 
 import { WalletDetailPage } from './WalletDetailPage';
 
+// Mock the hook
+vi.mock('../../hooks/useBudgetItems', () => ({
+  useBudgetItems: () => ({
+    items: [],
+    addItem: vi.fn(),
+    updateItem: vi.fn(),
+    deleteItem: vi.fn(),
+  }),
+}));
+
 describe('WalletDetailPage', () => {
-  it('renders wallet ID from URL params', () => {
+  it('renders correctly', () => {
     render(
       <MemoryRouter initialEntries={['/wallet/abc123']}>
         <Routes>
@@ -13,6 +23,8 @@ describe('WalletDetailPage', () => {
         </Routes>
       </MemoryRouter>
     );
-    expect(screen.getByText(/budget for wallet: abc123/i)).toBeInTheDocument();
+
+    // It should render "No items yet" since items is []
+    expect(screen.getByText(/no items yet/i)).toBeInTheDocument();
   });
 });

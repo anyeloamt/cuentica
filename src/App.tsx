@@ -1,3 +1,8 @@
+import { Route, Routes } from 'react-router-dom';
+
+import { HomePage } from './components/Home/HomePage';
+import { NotFoundPage } from './components/Home/NotFoundPage';
+import { WalletDetailPage } from './components/Budget/WalletDetailPage';
 import { InstallPrompt } from './components/Layout/InstallPrompt';
 import { ReloadPrompt } from './components/Layout/ReloadPrompt';
 import { ThemeToggle } from './components/Settings/ThemeToggle';
@@ -29,6 +34,11 @@ export function App(): JSX.Element {
           isInstalled={isInstalled}
           onInstall={promptInstall}
         />
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/wallet/:id" element={<WalletDetailPage />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
       </main>
     </div>
   );

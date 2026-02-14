@@ -26,3 +26,6 @@ dist-ssr
 # Test coverage
 coverage
 dev-dist
+
+# Internal notes and documentation
+.md/

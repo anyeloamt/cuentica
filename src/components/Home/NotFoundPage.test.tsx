@@ -15,6 +15,6 @@ describe('NotFoundPage', () => {
         </Routes>
       </MemoryRouter>
     );
-    expect(screen.getByRole('heading', { name: /wallets/i })).toBeInTheDocument();
+    expect(screen.getByText(/your wallets will appear here/i)).toBeInTheDocument();
   });
 });

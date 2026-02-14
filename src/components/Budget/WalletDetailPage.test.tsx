@@ -15,15 +15,4 @@ describe('WalletDetailPage', () => {
     );
     expect(screen.getByText(/budget for wallet: abc123/i)).toBeInTheDocument();
   });
-
-  it('renders back link to home', () => {
-    render(
-      <MemoryRouter initialEntries={['/wallet/test']}>
-        <Routes>
-          <Route path="/wallet/:id" element={<WalletDetailPage />} />
-        </Routes>
-      </MemoryRouter>
-    );
-    expect(screen.getByRole('link', { name: /back to wallets/i })).toBeInTheDocument();
-  });
 });

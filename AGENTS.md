@@ -44,13 +44,13 @@ src/
 
 ### Layer Dependencies
 
-| Layer | Can Import | Cannot Import | Purpose |
-|-------|-----------|---------------|---------|
-| `components/` | hooks/, lib/, context/, types/ | — | UI rendering, JSX |
-| `hooks/` | lib/, context/, types/ | components/ | Stateful logic, effects |
-| `lib/` | types/ only | components/, hooks/, context/ | Pure functions, DB, utils |
-| `context/` | hooks/, lib/, types/ | components/ | Shared state providers |
-| `types/` | Nothing | Everything | Interfaces, type defs |
+| Layer         | Can Import                     | Cannot Import                 | Purpose                   |
+| ------------- | ------------------------------ | ----------------------------- | ------------------------- |
+| `components/` | hooks/, lib/, context/, types/ | —                             | UI rendering, JSX         |
+| `hooks/`      | lib/, context/, types/         | components/                   | Stateful logic, effects   |
+| `lib/`        | types/ only                    | components/, hooks/, context/ | Pure functions, DB, utils |
+| `context/`    | hooks/, lib/, types/           | components/                   | Shared state providers    |
+| `types/`      | Nothing                        | Everything                    | Interfaces, type defs     |
 
 **Dependency direction**: Components → Hooks → Lib → Types (never reverse)
 
@@ -88,11 +88,13 @@ npm run lint && npm run typecheck && npm test
 ## Agent Workflow
 
 After making code changes, run:
+
 ```bash
 npm run lint && npm run typecheck && npm test
 ```
 
 If adding new features, ensure:
+
 1. PWA still works offline (`npm run build && npm run preview`, then test in airplane mode)
 2. Lighthouse PWA score remains > 95
 
@@ -150,8 +152,24 @@ interface BudgetItem extends SyncableEntity {
 ## Current Phase
 
 **Phase 1 — Local MVP** (Week 1-2)
+
 - See `ROADMAP.md` for full sprint breakdown
 - Focus: wallets CRUD, budget table, PDF export, PWA offline, Vercel deploy
+
+## Workflow Overrides
+
+### /work-issue — Plan Step
+
+The `/plan` step (Step 5 in work-issue) is **optional** at the orchestrator's discretion.
+
+| Complexity                                               | Plan? | Rationale                                                  |
+| -------------------------------------------------------- | ----- | ---------------------------------------------------------- |
+| Config/setup tasks (PWA, tooling, CI)                    | Skip  | Well-defined scope, exploration provides enough context    |
+| UI-heavy features (new screens, components)              | Skip  | Delegate directly to `visual-engineering` with clear specs |
+| Complex logic (data flows, state machines, multi-module) | Plan  | Architecture decisions benefit from upfront planning       |
+| Ambiguous scope                                          | Plan  | Reduces rework risk                                        |
+
+When skipping, the orchestrator must still provide equivalent context in the implementation delegation prompt (acceptance criteria, technical constraints, affected files).
 
 ## Key References
 

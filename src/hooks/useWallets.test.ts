@@ -12,6 +12,7 @@ const mockOrderBy = vi.fn();
 const mockTransaction = vi.fn();
 const mockGet = vi.fn();
 const mockDeleteWallet = vi.fn();
+const mockUpdate = vi.fn();
 const mockWhere = vi.fn();
 const mockDeleteBudgetItems = vi.fn();
 
@@ -26,6 +27,7 @@ vi.mock('../lib/db', () => ({
       add: (...args: unknown[]) => mockAdd(...args),
       get: (...args: unknown[]) => mockGet(...args),
       delete: (...args: unknown[]) => mockDeleteWallet(...args),
+      update: (...args: unknown[]) => mockUpdate(...args),
     },
     budgetItems: {
       where: (...args: unknown[]) => mockWhere(...args),
@@ -37,6 +39,7 @@ vi.mock('../lib/db', () => ({
 describe('useWallets', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUpdate.mockResolvedValue(1);
     mockOrderBy.mockReturnValue({
       toArray: mockToArray,
       last: mockLast,
@@ -45,17 +48,14 @@ describe('useWallets', () => {
     mockWhere.mockReturnValue({
       delete: mockDeleteBudgetItems,
     });
-    // Mock transaction to immediately execute the callback (last argument)
-    mockTransaction.mockImplementation((...args) => {
+    mockTransaction.mockImplementation(async (...args) => {
       const callback = args[args.length - 1];
       if (typeof callback === 'function') {
-        return callback();
+        return await callback();
       }
       return undefined;
     });
   });
-
-  // ... existing tests ...
 
   it('reactively updates when a new wallet is added', async () => {
     const wallets: Wallet[] = [
@@ -204,6 +204,132 @@ describe('useWallets', () => {
       const deleteResult = await result.current.deleteWallet('w1');
 
       expect(deleteResult).toEqual({ ok: false, error: 'db-error' });
+    });
+  });
+
+  describe('renameWallet', () => {
+    it('renames wallet successfully', async () => {
+      mockUpdate.mockResolvedValue(1); // 1 record updated
+
+      const { result } = renderHook(() => useWallets());
+      const res = await result.current.renameWallet('w1', 'New Name');
+
+      expect(res).toEqual({ ok: true });
+      expect(mockUpdate).toHaveBeenCalledWith('w1', {
+        name: 'New Name',
+        updatedAt: expect.any(Number),
+      });
+    });
+
+    it('rejects empty name', async () => {
+      const { result } = renderHook(() => useWallets());
+      const res = await result.current.renameWallet('w1', '   ');
+
+      expect(res).toEqual({ ok: false, error: 'empty-name' });
+      expect(mockUpdate).not.toHaveBeenCalled();
+    });
+
+    it('returns not-found if wallet does not exist', async () => {
+      mockUpdate.mockResolvedValue(0); // 0 records updated
+
+      const { result } = renderHook(() => useWallets());
+      const res = await result.current.renameWallet('w1', 'New Name');
+
+      expect(res).toEqual({ ok: false, error: 'not-found' });
+    });
+
+    it('returns db-error on failure', async () => {
+      mockUpdate.mockRejectedValue(new Error('DB Error'));
+
+      const { result } = renderHook(() => useWallets());
+      const res = await result.current.renameWallet('w1', 'New Name');
+
+      expect(res).toEqual({ ok: false, error: 'db-error' });
+    });
+  });
+
+  describe('reorderWallet', () => {
+    it('swaps order with previous wallet (up)', async () => {
+      const w1 = { id: 'w1', order: 1 };
+      const w2 = { id: 'w2', order: 2 };
+      mockGet.mockResolvedValue(w2); // Initial get
+      mockToArray.mockResolvedValue([w1, w2]); // All wallets
+
+      const { result } = renderHook(() => useWallets());
+      const res = await result.current.reorderWallet('w2', 'up');
+
+      expect(res).toEqual({ ok: true });
+      // Expect both to be updated
+      expect(mockUpdate).toHaveBeenCalledWith('w2', {
+        order: 1,
+        updatedAt: expect.any(Number),
+      });
+      expect(mockUpdate).toHaveBeenCalledWith('w1', {
+        order: 2,
+        updatedAt: expect.any(Number),
+      });
+    });
+
+    it('swaps order with next wallet (down)', async () => {
+      const w1 = { id: 'w1', order: 1 };
+      const w2 = { id: 'w2', order: 2 };
+      mockGet.mockResolvedValue(w1);
+      mockToArray.mockResolvedValue([w1, w2]);
+
+      const { result } = renderHook(() => useWallets());
+      const res = await result.current.reorderWallet('w1', 'down');
+
+      expect(res).toEqual({ ok: true });
+      expect(mockUpdate).toHaveBeenCalledWith('w1', {
+        order: 2,
+        updatedAt: expect.any(Number),
+      });
+      expect(mockUpdate).toHaveBeenCalledWith('w2', {
+        order: 1,
+        updatedAt: expect.any(Number),
+      });
+    });
+
+    it('returns already-at-edge if moving first up', async () => {
+      const w1 = { id: 'w1', order: 1 };
+      mockGet.mockResolvedValue(w1);
+      mockToArray.mockResolvedValue([w1]);
+
+      const { result } = renderHook(() => useWallets());
+      const res = await result.current.reorderWallet('w1', 'up');
+
+      expect(res).toEqual({ ok: false, error: 'already-at-edge' });
+      expect(mockUpdate).not.toHaveBeenCalled();
+    });
+
+    it('returns already-at-edge if moving last down', async () => {
+      const w1 = { id: 'w1', order: 1 };
+      mockGet.mockResolvedValue(w1);
+      mockToArray.mockResolvedValue([w1]);
+
+      const { result } = renderHook(() => useWallets());
+      const res = await result.current.reorderWallet('w1', 'down');
+
+      expect(res).toEqual({ ok: false, error: 'already-at-edge' });
+      expect(mockUpdate).not.toHaveBeenCalled();
+    });
+
+    it('returns not-found if wallet not found', async () => {
+      mockGet.mockResolvedValue(undefined);
+
+      const { result } = renderHook(() => useWallets());
+      const res = await result.current.reorderWallet('w1', 'up');
+
+      expect(res).toEqual({ ok: false, error: 'not-found' });
+    });
+
+    it('returns db-error on failure', async () => {
+      mockTransaction.mockRejectedValue(new Error('DB Error'));
+
+      const { result } = renderHook(() => useWallets());
+      const res = await result.current.reorderWallet('w1', 'up');
+
+      expect(res).toEqual({ ok: false, error: 'db-error' });
     });
   });
 });

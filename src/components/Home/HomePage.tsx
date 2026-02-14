@@ -12,7 +12,8 @@ export function HomePage(): JSX.Element {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [walletToDelete, setWalletToDelete] = useState<Wallet | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const { wallets, createWallet, deleteWallet } = useWallets();
+  const { wallets, createWallet, deleteWallet, renameWallet, reorderWallet } =
+    useWallets();
 
   const handleConfirmDelete = async () => {
     if (!walletToDelete || !walletToDelete.id) return;
@@ -23,9 +24,22 @@ export function HomePage(): JSX.Element {
     setWalletToDelete(null);
   };
 
+  const handleRename = async (id: string, name: string) => {
+    await renameWallet(id, name);
+  };
+
+  const handleReorder = async (id: string, direction: 'up' | 'down') => {
+    await reorderWallet(id, direction);
+  };
+
   return (
     <>
-      <WalletList wallets={wallets} onDeleteWallet={setWalletToDelete} />
+      <WalletList
+        wallets={wallets}
+        onDeleteWallet={setWalletToDelete}
+        onRenameWallet={handleRename}
+        onReorderWallet={handleReorder}
+      />
       <FloatingActionButton
         onClick={() => setIsCreateModalOpen(true)}
         label="Add Wallet"

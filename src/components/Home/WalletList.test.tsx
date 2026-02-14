@@ -8,11 +8,20 @@ import { WalletList } from './WalletList';
 
 describe('WalletList', () => {
   const mockOnDeleteWallet = vi.fn();
+  const mockOnRenameWallet = vi.fn();
+  const mockOnReorderWallet = vi.fn();
+
+  const defaultProps = {
+    wallets: [],
+    onDeleteWallet: mockOnDeleteWallet,
+    onRenameWallet: mockOnRenameWallet,
+    onReorderWallet: mockOnReorderWallet,
+  };
 
   it('renders loading fallback while wallets are undefined', () => {
     render(
       <MemoryRouter>
-        <WalletList wallets={undefined} onDeleteWallet={mockOnDeleteWallet} />
+        <WalletList {...defaultProps} wallets={undefined} />
       </MemoryRouter>
     );
 
@@ -22,11 +31,12 @@ describe('WalletList', () => {
   it('renders empty fallback when no wallets exist', () => {
     render(
       <MemoryRouter>
-        <WalletList wallets={[]} onDeleteWallet={mockOnDeleteWallet} />
+        <WalletList {...defaultProps} wallets={[]} />
       </MemoryRouter>
     );
 
     expect(screen.getByText(/no wallets yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/tap \+ to create your first wallet/i)).toBeInTheDocument();
   });
 
   it('renders wallet links for wallets with ids', () => {
@@ -49,7 +59,7 @@ describe('WalletList', () => {
 
     render(
       <MemoryRouter>
-        <WalletList wallets={wallets} onDeleteWallet={mockOnDeleteWallet} />
+        <WalletList {...defaultProps} wallets={wallets} />
       </MemoryRouter>
     );
 
@@ -79,7 +89,7 @@ describe('WalletList', () => {
 
     render(
       <MemoryRouter>
-        <WalletList wallets={wallets} onDeleteWallet={mockOnDeleteWallet} />
+        <WalletList {...defaultProps} wallets={wallets} />
       </MemoryRouter>
     );
 
@@ -103,7 +113,7 @@ describe('WalletList', () => {
 
     render(
       <MemoryRouter>
-        <WalletList wallets={wallets} onDeleteWallet={mockOnDeleteWallet} />
+        <WalletList {...defaultProps} wallets={wallets} />
       </MemoryRouter>
     );
 
@@ -111,5 +121,68 @@ describe('WalletList', () => {
     fireEvent.click(deleteButton);
 
     expect(mockOnDeleteWallet).toHaveBeenCalledWith(wallets[0]);
+  });
+
+  it('handles inline rename', () => {
+    const wallets: Wallet[] = [
+      {
+        id: 'w1',
+        name: 'Old Name',
+        order: 1,
+        createdAt: 1,
+        updatedAt: 1,
+      },
+    ];
+
+    render(
+      <MemoryRouter>
+        <WalletList {...defaultProps} wallets={wallets} />
+      </MemoryRouter>
+    );
+
+    const nameElement = screen.getByText('Old Name');
+    fireEvent.click(nameElement);
+
+    const input = screen.getByRole('textbox');
+    fireEvent.change(input, { target: { value: 'New Name' } });
+    fireEvent.blur(input);
+
+    expect(mockOnRenameWallet).toHaveBeenCalledWith('w1', 'New Name');
+  });
+
+  it('renders reorder buttons', () => {
+    const wallets: Wallet[] = [
+      { id: 'w1', name: '1', order: 1, createdAt: 1, updatedAt: 1 },
+      { id: 'w2', name: '2', order: 2, createdAt: 1, updatedAt: 1 },
+    ];
+
+    render(
+      <MemoryRouter>
+        <WalletList {...defaultProps} wallets={wallets} />
+      </MemoryRouter>
+    );
+
+    const upButtons = screen.getAllByRole('button', { name: /move up/i });
+    const downButtons = screen.getAllByRole('button', { name: /move down/i });
+
+    expect(upButtons).toHaveLength(1);
+    expect(downButtons).toHaveLength(1);
+  });
+
+  it('calls onReorderWallet when clicked', () => {
+    const wallets: Wallet[] = [
+      { id: 'w1', name: '1', order: 1, createdAt: 1, updatedAt: 1 },
+      { id: 'w2', name: '2', order: 2, createdAt: 1, updatedAt: 1 },
+    ];
+
+    render(
+      <MemoryRouter>
+        <WalletList {...defaultProps} wallets={wallets} />
+      </MemoryRouter>
+    );
+
+    const downButton = screen.getByRole('button', { name: /move down/i });
+    fireEvent.click(downButton);
+    expect(mockOnReorderWallet).toHaveBeenCalledWith('w1', 'down');
   });
 });

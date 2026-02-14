@@ -18,7 +18,7 @@ describe('WalletList', () => {
   });
 
   it('renders loading fallback while wallets are undefined', () => {
-    mockUseWallets.mockReturnValue(undefined);
+    mockUseWallets.mockReturnValue({ wallets: undefined });
 
     render(
       <MemoryRouter>
@@ -30,7 +30,7 @@ describe('WalletList', () => {
   });
 
   it('renders empty fallback when no wallets exist', () => {
-    mockUseWallets.mockReturnValue([]);
+    mockUseWallets.mockReturnValue({ wallets: [] });
 
     render(
       <MemoryRouter>
@@ -59,7 +59,7 @@ describe('WalletList', () => {
       },
     ];
 
-    mockUseWallets.mockReturnValue(wallets);
+    mockUseWallets.mockReturnValue({ wallets });
 
     render(
       <MemoryRouter>
@@ -67,8 +67,8 @@ describe('WalletList', () => {
       </MemoryRouter>
     );
 
-    const homeLink = screen.getByRole('link', { name: 'Home' });
-    const foodLink = screen.getByRole('link', { name: 'Food' });
+    const homeLink = screen.getByRole('link', { name: /home/i });
+    const foodLink = screen.getByRole('link', { name: /food/i });
 
     expect(homeLink).toHaveAttribute('href', '/wallet/wallet-1');
     expect(foodLink).toHaveAttribute('href', '/wallet/wallet-2');
@@ -91,7 +91,7 @@ describe('WalletList', () => {
       },
     ];
 
-    mockUseWallets.mockReturnValue(wallets);
+    mockUseWallets.mockReturnValue({ wallets });
 
     render(
       <MemoryRouter>
@@ -99,8 +99,8 @@ describe('WalletList', () => {
       </MemoryRouter>
     );
 
-    expect(screen.queryByRole('link', { name: 'Draft Wallet' })).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Food' })).toHaveAttribute(
+    expect(screen.queryByRole('link', { name: /draft wallet/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /food/i })).toHaveAttribute(
       'href',
       '/wallet/wallet-2'
     );

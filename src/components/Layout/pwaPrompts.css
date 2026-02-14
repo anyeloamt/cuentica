@@ -1,0 +1,22 @@
+.pwa-prompt {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  max-width: 22rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0.5rem;
+  background: rgba(20, 20, 20, 0.95);
+  color: #ffffff;
+  z-index: 10;
+}
+
+.pwa-prompt__actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.pwa-prompt button {
+  padding: 0.35rem 0.75rem;
+}

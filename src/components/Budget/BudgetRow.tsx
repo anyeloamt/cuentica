@@ -23,6 +23,7 @@ export function BudgetRow({
 
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const lastSentRef = useRef({ name: item.name, amount: item.amount });
+  const nameInputRef = useRef<HTMLInputElement>(null);
 
   // Sync local state when props change (e.g. from DB reload)
   // We check if values are different to avoid cursor jumping if possible,
@@ -48,6 +49,13 @@ export function BudgetRow({
   useEffect(() => {
     lastSentRef.current = { name: item.name, amount: item.amount };
   }, [item.name, item.amount]);
+
+  useEffect(() => {
+    if (autoFocus) {
+      nameInputRef.current?.focus();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only on mount
 
   if (!item.id) {
     return null;
@@ -117,10 +125,9 @@ export function BudgetRow({
       </div>
       <div className="flex-grow min-w-0">
         <input
+          ref={nameInputRef}
           type="text"
           value={name}
-          // eslint-disable-next-line jsx-a11y/no-autofocus
-          autoFocus={autoFocus}
           onChange={handleNameChange}
           onBlur={handleBlur}
           placeholder="Item name"

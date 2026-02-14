@@ -1,51 +1,17 @@
-import { useEffect, useState } from 'react';
-
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{
-    outcome: 'accepted' | 'dismissed';
-    platform: string;
-  }>;
+interface InstallPromptProps {
+  isInstallable: boolean;
+  isInstalled: boolean;
+  onInstall: () => Promise<void>;
 }
 
-export function InstallPrompt(): JSX.Element | null {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(
-    null
-  );
-  const [isInstalled, setIsInstalled] = useState(false);
-
-  useEffect(() => {
-    const handleBeforeInstallPrompt = (event: Event): void => {
-      event.preventDefault();
-      setDeferredPrompt(event as BeforeInstallPromptEvent);
-    };
-
-    const handleAppInstalled = (): void => {
-      setIsInstalled(true);
-      setDeferredPrompt(null);
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    window.addEventListener('appinstalled', handleAppInstalled);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', handleAppInstalled);
-    };
-  }, []);
-
-  if (isInstalled || !deferredPrompt) {
+export function InstallPrompt({
+  isInstallable,
+  isInstalled,
+  onInstall,
+}: InstallPromptProps): JSX.Element | null {
+  if (isInstalled || !isInstallable) {
     return null;
   }
-
-  const handleInstall = async (): Promise<void> => {
-    await deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-
-    if (outcome === 'accepted' || outcome === 'dismissed') {
-      setDeferredPrompt(null);
-    }
-  };
 
   return (
     <div
@@ -56,11 +22,8 @@ export function InstallPrompt(): JSX.Element | null {
     >
       <p>Install Cuentica for quicker access and offline support.</p>
       <div className="pwa-prompt__actions">
-        <button type="button" onClick={handleInstall}>
+        <button type="button" onClick={() => void onInstall()}>
           Install app
-        </button>
-        <button type="button" onClick={() => setDeferredPrompt(null)}>
-          Not now
         </button>
       </div>
     </div>

@@ -1,28 +1,32 @@
-import { useRegisterSW } from 'virtual:pwa-register/react';
+interface ReloadPromptProps {
+  offlineReady: boolean;
+  needRefresh: boolean;
+  onReload: () => Promise<void>;
+  onDismiss: () => void;
+}
 
-export function ReloadPrompt(): JSX.Element | null {
-  const { needRefresh, updateServiceWorker } = useRegisterSW();
-
-  if (!needRefresh[0]) {
+export function ReloadPrompt({
+  offlineReady,
+  needRefresh,
+  onReload,
+  onDismiss,
+}: ReloadPromptProps): JSX.Element | null {
+  if (!offlineReady && !needRefresh) {
     return null;
   }
 
-  const handleReload = (): void => {
-    void updateServiceWorker(true);
-  };
-
-  const handleDismiss = (): void => {
-    needRefresh[1](false);
-  };
-
   return (
     <div className="pwa-prompt" role="status" aria-live="polite">
-      <p>A new version is available.</p>
+      <p>
+        {needRefresh ? 'A new version is available.' : 'App is ready to work offline.'}
+      </p>
       <div className="pwa-prompt__actions">
-        <button type="button" onClick={handleReload}>
-          Reload
-        </button>
-        <button type="button" onClick={handleDismiss}>
+        {needRefresh && (
+          <button type="button" onClick={() => void onReload()}>
+            Reload
+          </button>
+        )}
+        <button type="button" onClick={onDismiss}>
           Dismiss
         </button>
       </div>

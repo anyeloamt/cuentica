@@ -22,7 +22,7 @@ export function Header(): JSX.Element {
         {!isHome && (
           <button
             onClick={() => navigate('/')}
-            className="p-2 -ml-2 text-3xl leading-none text-text-primary hover:text-accent transition-colors cursor-pointer"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center -ml-2 text-3xl leading-none text-text-primary hover:text-accent transition-colors cursor-pointer"
             aria-label="Go back"
           >
             ‹

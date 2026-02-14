@@ -15,6 +15,7 @@ export function BudgetRow({ item, onUpdate, onDelete, autoFocus }: BudgetRowProp
   const [amount, setAmount] = useState(item.amount === 0 ? '' : item.amount.toString());
 
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const lastSentRef = useRef({ name: item.name, amount: item.amount });
 
   // Sync local state when props change (e.g. from DB reload)
   // We check if values are different to avoid cursor jumping if possible,
@@ -37,6 +38,16 @@ export function BudgetRow({ item, onUpdate, onDelete, autoFocus }: BudgetRowProp
     };
   }, []);
 
+  useEffect(() => {
+    lastSentRef.current = { name: item.name, amount: item.amount };
+  }, [item.name, item.amount]);
+
+  if (!item.id) {
+    return null;
+  }
+
+  const itemId = item.id;
+
   const triggerUpdate = (newName: string, newAmountStr: string) => {
     if (debounceTimer.current) {
       clearTimeout(debounceTimer.current);
@@ -44,7 +55,8 @@ export function BudgetRow({ item, onUpdate, onDelete, autoFocus }: BudgetRowProp
 
     debounceTimer.current = setTimeout(() => {
       const numAmount = newAmountStr === '' ? 0 : parseFloat(newAmountStr);
-      onUpdate(item.id!, { name: newName, amount: numAmount });
+      lastSentRef.current = { name: newName, amount: numAmount };
+      onUpdate(itemId, { name: newName, amount: numAmount });
     }, 500);
   };
 
@@ -69,18 +81,19 @@ export function BudgetRow({ item, onUpdate, onDelete, autoFocus }: BudgetRowProp
       debounceTimer.current = undefined;
     }
     const numAmount = amount === '' ? 0 : parseFloat(amount);
-    if (name !== item.name || numAmount !== item.amount) {
-      onUpdate(item.id!, { name, amount: numAmount });
+    if (name !== lastSentRef.current.name || numAmount !== lastSentRef.current.amount) {
+      lastSentRef.current = { name, amount: numAmount };
+      onUpdate(itemId, { name, amount: numAmount });
     }
   };
 
   const toggleType = () => {
     const newType = item.type === '+' ? '-' : '+';
-    onUpdate(item.id!, { type: newType });
+    onUpdate(itemId, { type: newType });
   };
 
   const handleDelete = () => {
-    onDelete(item.id!);
+    onDelete(itemId);
   };
 
   return (
@@ -101,12 +114,13 @@ export function BudgetRow({ item, onUpdate, onDelete, autoFocus }: BudgetRowProp
           onChange={handleNameChange}
           onBlur={handleBlur}
           placeholder="Item name"
-          className="w-full bg-transparent border-none outline-none text-gray-900 dark:text-gray-100 placeholder-gray-400"
+          className="w-full bg-transparent border-none outline-none text-text-primary placeholder-gray-400"
           aria-label="Item name"
         />
       </div>
 
       <button
+        type="button"
         onClick={toggleType}
         className={`w-8 h-8 flex items-center justify-center rounded-full font-bold text-lg transition-colors ${
           item.type === '+'
@@ -126,12 +140,13 @@ export function BudgetRow({ item, onUpdate, onDelete, autoFocus }: BudgetRowProp
           onChange={handleAmountChange}
           onBlur={handleBlur}
           placeholder="0"
-          className="w-full bg-transparent border-none outline-none text-right text-gray-900 dark:text-gray-100 placeholder-gray-400 font-mono"
+          className="w-full bg-transparent border-none outline-none text-right text-text-primary placeholder-gray-400 font-mono"
           aria-label="Amount"
         />
       </div>
 
       <button
+        type="button"
         onClick={handleDelete}
         className="text-gray-400 hover:text-red-500 p-2 transition-colors"
         aria-label="Delete item"

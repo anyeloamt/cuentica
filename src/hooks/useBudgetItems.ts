@@ -57,6 +57,10 @@ export function useBudgetItems(walletId: string) {
 
   const deleteItem = async (id: string) => {
     try {
+      const exists = await db.budgetItems.get(id);
+      if (!exists) {
+        return { ok: false, error: 'not-found' };
+      }
       await db.budgetItems.delete(id);
       return { ok: true };
     } catch (error) {

@@ -10,6 +10,7 @@ describe('BudgetTable', () => {
   const mockTrimRows = vi.fn();
   const mockUpdateItem = vi.fn();
   const mockDeleteItem = vi.fn().mockResolvedValue({ ok: true });
+  const mockReorderItems = vi.fn().mockResolvedValue({ ok: true });
 
   const items: BudgetItem[] = [
     {
@@ -42,6 +43,7 @@ describe('BudgetTable', () => {
         onTrimRows={mockTrimRows}
         onUpdateItem={mockUpdateItem}
         onDeleteItem={mockDeleteItem}
+        onReorderItems={mockReorderItems}
       />
     );
     expect(screen.getByText('Loading...')).toBeInTheDocument();
@@ -55,6 +57,7 @@ describe('BudgetTable', () => {
         onTrimRows={mockTrimRows}
         onUpdateItem={mockUpdateItem}
         onDeleteItem={mockDeleteItem}
+        onReorderItems={mockReorderItems}
       />
     );
     expect(screen.getByText('No items yet.')).toBeInTheDocument();
@@ -68,6 +71,7 @@ describe('BudgetTable', () => {
         onTrimRows={mockTrimRows}
         onUpdateItem={mockUpdateItem}
         onDeleteItem={mockDeleteItem}
+        onReorderItems={mockReorderItems}
       />
     );
 
@@ -90,6 +94,7 @@ describe('BudgetTable', () => {
         onTrimRows={mockTrimRows}
         onUpdateItem={mockUpdateItem}
         onDeleteItem={mockDeleteItem}
+        onReorderItems={mockReorderItems}
       />
     );
 
@@ -118,6 +123,7 @@ describe('BudgetTable', () => {
         onTrimRows={mockTrimRows}
         onUpdateItem={mockUpdateItem}
         onDeleteItem={mockDeleteItem}
+        onReorderItems={mockReorderItems}
       />
     );
 

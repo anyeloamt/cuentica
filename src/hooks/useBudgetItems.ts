@@ -147,5 +147,35 @@ export function useBudgetItems(walletId: string) {
     }
   };
 
-  return { items, addItem, addItems, trimEmptyRows, updateItem, deleteItem, restoreItem };
+  const reorderBudgetItems = async (updates: { id: string; order: number }[]) => {
+    try {
+      await db.transaction('rw', db.budgetItems, async () => {
+        const timestamp = Date.now();
+        await Promise.all(
+          updates.map(({ id, order }) =>
+            db.budgetItems.update(id, {
+              order,
+              updatedAt: timestamp,
+              syncStatus: 'pending',
+            })
+          )
+        );
+      });
+      return { ok: true };
+    } catch (error) {
+      console.error('Failed to reorder budget items:', error);
+      return { ok: false, error: 'db-error' };
+    }
+  };
+
+  return {
+    items,
+    addItem,
+    addItems,
+    trimEmptyRows,
+    updateItem,
+    deleteItem,
+    restoreItem,
+    reorderBudgetItems,
+  };
 }

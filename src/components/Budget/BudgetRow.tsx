@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 import type { BudgetItem } from '../../types';
 
@@ -24,6 +26,17 @@ function BudgetRowComponent({
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const lastSentRef = useRef({ name: item.name, amount: item.amount });
   const nameInputRef = useRef<HTMLInputElement>(null);
+
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: item.id! });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 1 : 0,
+    position: 'relative' as const,
+  };
 
   // Sync local state when props change (e.g. from DB reload)
   // We check if values are different to avoid cursor jumping if possible,
@@ -118,13 +131,37 @@ function BudgetRowComponent({
 
   return (
     <div
-      className={`flex items-center gap-1 py-1.5 border-b border-border ${
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-1 py-1.5 border-b border-border bg-bg-primary ${
         item.type === '+'
-          ? 'border-l-4 border-l-green-500 pl-2'
-          : 'border-l-4 border-l-red-500 pl-2'
-      }`}
+          ? 'border-l-4 border-l-green-500'
+          : 'border-l-4 border-l-red-500'
+      } ${isDragging ? 'shadow-lg' : ''}`}
       role="row"
     >
+      <div
+        {...attributes}
+        {...listeners}
+        className="w-8 h-8 flex items-center justify-center cursor-grab active:cursor-grabbing text-gray-400 hover:text-text-primary touch-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:outline-none rounded"
+        aria-label="Drag to reorder"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth={1.5}
+          stroke="currentColor"
+          className="w-5 h-5"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
+          />
+        </svg>
+      </div>
+
       <div className="text-xs text-text-secondary w-6 text-center flex-shrink-0 font-mono">
         {rowNumber}
       </div>

@@ -25,6 +25,9 @@ export function useWallets(): {
   deleteWallet: (id: string) => Promise<DeleteWalletResult>;
   renameWallet: (id: string, name: string) => Promise<RenameWalletResult>;
   reorderWallet: (id: string, direction: 'up' | 'down') => Promise<ReorderWalletResult>;
+  reorderWallets: (
+    updates: { id: string; order: number }[]
+  ) => Promise<{ ok: boolean; error?: string }>;
 } {
   const wallets = useLiveQuery(() => db.wallets.orderBy('order').toArray());
 
@@ -131,5 +134,34 @@ export function useWallets(): {
     }
   };
 
-  return { wallets, createWallet, deleteWallet, renameWallet, reorderWallet };
+  const reorderWallets = async (
+    updates: { id: string; order: number }[]
+  ): Promise<{ ok: boolean; error?: string }> => {
+    try {
+      await db.transaction('rw', db.wallets, async () => {
+        const timestamp = Date.now();
+        await Promise.all(
+          updates.map(({ id, order }) =>
+            db.wallets.update(id, {
+              order,
+              updatedAt: timestamp,
+            })
+          )
+        );
+      });
+      return { ok: true };
+    } catch (error) {
+      console.error('Failed to reorder wallets:', error);
+      return { ok: false, error: 'db-error' };
+    }
+  };
+
+  return {
+    wallets,
+    createWallet,
+    deleteWallet,
+    renameWallet,
+    reorderWallet,
+    reorderWallets,
+  };
 }

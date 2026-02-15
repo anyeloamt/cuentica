@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 
 interface UsePwaUpdatePromptResult {
@@ -23,6 +23,17 @@ export function usePwaUpdatePrompt(): UsePwaUpdatePromptResult {
     offlineReady[1](false);
     needRefresh[1](false);
   }, [needRefresh, offlineReady]);
+
+  const isOfflineReady = offlineReady[0];
+
+  useEffect(() => {
+    if (isOfflineReady) {
+      const timer = setTimeout(() => {
+        dismiss();
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [isOfflineReady, dismiss]);
 
   return {
     offlineReady: offlineReady[0],

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 
 import type { BudgetItem } from '../../types';
 
@@ -39,30 +39,33 @@ export function BudgetTable({
     return () => clearTimeout(timer);
   }, [deletedItems]);
 
-  const handleAddItems = async () => {
+  const handleAddItems = useCallback(async () => {
     const result = await onAddItems();
     if (result.ok && result.ids && result.ids.length > 0) {
       setLastAddedId(result.ids[0]);
     }
-  };
+  }, [onAddItems]);
 
-  const handleTrimRows = async () => {
+  const handleTrimRows = useCallback(async () => {
     await onTrimRows();
-  };
+  }, [onTrimRows]);
 
-  const handleDeleteWithUndo = async (id: string) => {
-    const item = items?.find((i) => i.id === id);
-    if (!item) {
-      return;
-    }
+  const handleDeleteWithUndo = useCallback(
+    async (id: string) => {
+      const item = items?.find((i) => i.id === id);
+      if (!item) {
+        return;
+      }
 
-    const result = await onDeleteItem(id);
-    if (result.ok) {
-      setDeletedItems((prev) => [...prev, item]);
-    }
-  };
+      const result = await onDeleteItem(id);
+      if (result.ok) {
+        setDeletedItems((prev) => [...prev, item]);
+      }
+    },
+    [items, onDeleteItem]
+  );
 
-  const handleUndo = async () => {
+  const handleUndo = useCallback(async () => {
     if (deletedItems.length === 0 || !onRestoreItem) {
       return;
     }
@@ -84,15 +87,18 @@ export function BudgetTable({
     }
 
     setDeletedItems(failedItems);
-  };
+  }, [deletedItems, onRestoreItem]);
+
+  const total = useMemo(() => {
+    if (!items) return 0;
+    return items.reduce((acc, item) => {
+      return acc + (item.type === '+' ? item.amount : -item.amount);
+    }, 0);
+  }, [items]);
 
   if (items === undefined) {
     return <div className="p-4 text-center text-text-secondary">Loading...</div>;
   }
-
-  const total = items.reduce((acc, item) => {
-    return acc + (item.type === '+' ? item.amount : -item.amount);
-  }, 0);
 
   return (
     <div className="flex flex-col h-full w-full max-w-2xl mx-auto">

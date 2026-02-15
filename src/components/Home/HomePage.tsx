@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { useWallets } from '../../hooks/useWallets';
 import type { Wallet } from '../../types';
@@ -14,40 +14,62 @@ export function HomePage(): JSX.Element {
   const [isDeleting, setIsDeleting] = useState(false);
   const { wallets, createWallet, deleteWallet, renameWallet, reorderWallet } =
     useWallets();
+  const [cachedWallets, setCachedWallets] = useState<Wallet[] | undefined>(undefined);
 
-  const handleConfirmDelete = async () => {
+  useEffect(() => {
+    if (wallets !== undefined) {
+      setCachedWallets(wallets);
+    }
+  }, [wallets]);
+
+  const handleConfirmDelete = useCallback(async () => {
     if (!walletToDelete || !walletToDelete.id) return;
 
     setIsDeleting(true);
     await deleteWallet(walletToDelete.id);
     setIsDeleting(false);
     setWalletToDelete(null);
-  };
+  }, [deleteWallet, walletToDelete]);
 
-  const handleRename = async (id: string, name: string) => {
-    await renameWallet(id, name);
-  };
+  const handleRename = useCallback(
+    async (id: string, name: string) => {
+      await renameWallet(id, name);
+    },
+    [renameWallet]
+  );
 
-  const handleReorder = async (id: string, direction: 'up' | 'down') => {
-    await reorderWallet(id, direction);
-  };
+  const handleReorder = useCallback(
+    async (id: string, direction: 'up' | 'down') => {
+      await reorderWallet(id, direction);
+    },
+    [reorderWallet]
+  );
+
+  const handleOpenCreateModal = useCallback(() => {
+    setIsCreateModalOpen(true);
+  }, []);
+
+  const handleCloseCreateModal = useCallback(() => {
+    setIsCreateModalOpen(false);
+  }, []);
+
+  const handleCancelDelete = useCallback(() => {
+    setWalletToDelete(null);
+  }, []);
 
   return (
     <>
       <WalletList
-        wallets={wallets}
+        wallets={wallets ?? cachedWallets}
         onDeleteWallet={setWalletToDelete}
         onRenameWallet={handleRename}
         onReorderWallet={handleReorder}
       />
-      <FloatingActionButton
-        onClick={() => setIsCreateModalOpen(true)}
-        label="Add Wallet"
-      />
+      <FloatingActionButton onClick={handleOpenCreateModal} label="Add Wallet" />
       {isCreateModalOpen && (
         <CreateWalletModal
           isOpen={isCreateModalOpen}
-          onClose={() => setIsCreateModalOpen(false)}
+          onClose={handleCloseCreateModal}
           createWallet={createWallet}
         />
       )}
@@ -55,7 +77,7 @@ export function HomePage(): JSX.Element {
         isOpen={walletToDelete !== null}
         walletName={walletToDelete?.name ?? ''}
         onConfirm={handleConfirmDelete}
-        onCancel={() => setWalletToDelete(null)}
+        onCancel={handleCancelDelete}
         isDeleting={isDeleting}
       />
     </>

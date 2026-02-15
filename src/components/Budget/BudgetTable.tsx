@@ -90,7 +90,10 @@ export function BudgetTable({
   }, [deletedItems, onRestoreItem]);
 
   const total = useMemo(() => {
-    if (!items) return 0;
+    if (items === undefined) {
+      return 0;
+    }
+
     return items.reduce((acc, item) => {
       return acc + (item.type === '+' ? item.amount : -item.amount);
     }, 0);
@@ -144,6 +147,7 @@ export function BudgetTable({
               strokeWidth={2}
               stroke="currentColor"
               className="w-5 h-5 mr-2"
+              aria-hidden="true"
             >
               <path
                 strokeLinecap="round"
@@ -171,7 +175,6 @@ export function BudgetTable({
 
       {deletedItems.length > 0 && (
         <div
-          role="status"
           aria-live="polite"
           className="fixed bottom-16 left-1/2 transform -translate-x-1/2 bg-gray-800 dark:bg-gray-700 text-white px-4 py-3 rounded-lg shadow-lg z-20 flex items-center gap-4 transition-opacity duration-300"
         >

@@ -6,10 +6,10 @@ import type { BudgetItem } from '../../types';
 import { BudgetTable } from './BudgetTable';
 
 describe('BudgetTable', () => {
-  const mockAddItems = vi.fn();
+  const mockAddItems = vi.fn().mockResolvedValue({ ok: true, ids: [] });
   const mockTrimRows = vi.fn();
   const mockUpdateItem = vi.fn();
-  const mockDeleteItem = vi.fn();
+  const mockDeleteItem = vi.fn().mockResolvedValue({ ok: true });
 
   const items: BudgetItem[] = [
     {

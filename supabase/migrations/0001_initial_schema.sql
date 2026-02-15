@@ -9,8 +9,8 @@ create table if not exists public.wallets (
   category_id text,
   created_at bigint not null,
   updated_at bigint not null,
-  sync_status text default 'pending',
-  deleted boolean default false
+  sync_status text not null default 'pending' check (sync_status in ('pending', 'synced')),
+  deleted boolean not null default false
 );
 
 create table if not exists public.budget_items (
@@ -25,8 +25,8 @@ create table if not exists public.budget_items (
   category_tag text,
   created_at bigint not null,
   updated_at bigint not null,
-  sync_status text default 'pending',
-  deleted boolean default false
+  sync_status text not null default 'pending' check (sync_status in ('pending', 'synced')),
+  deleted boolean not null default false
 );
 
 create index if not exists wallets_user_id_idx on public.wallets (user_id);
@@ -70,13 +70,37 @@ create policy "budget_items_select_own"
 create policy "budget_items_insert_own"
   on public.budget_items
   for insert
-  with check (auth.uid() = user_id);
+  with check (
+    auth.uid() = user_id
+    and exists (
+      select 1
+      from public.wallets
+      where id = wallet_id
+        and user_id = auth.uid()
+    )
+  );
 
 create policy "budget_items_update_own"
   on public.budget_items
   for update
-  using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
+  using (
+    auth.uid() = user_id
+    and exists (
+      select 1
+      from public.wallets
+      where id = wallet_id
+        and user_id = auth.uid()
+    )
+  )
+  with check (
+    auth.uid() = user_id
+    and exists (
+      select 1
+      from public.wallets
+      where id = wallet_id
+        and user_id = auth.uid()
+    )
+  );
 
 create policy "budget_items_delete_own"
   on public.budget_items

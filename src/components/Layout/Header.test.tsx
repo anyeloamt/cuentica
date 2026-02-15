@@ -3,6 +3,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, vi } from 'vitest';
 
 import { AuthProvider } from '../../context/AuthContext';
+
 import { Header } from './Header';
 
 vi.mock('../Settings/ThemeToggle', () => ({

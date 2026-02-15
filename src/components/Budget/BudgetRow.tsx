@@ -118,14 +118,14 @@ export function BudgetRow({
 
   return (
     <div
-      className={`flex items-center gap-2 py-2 min-h-[44px] border-b border-border ${
+      className={`flex items-center gap-1 py-1.5 border-b border-border ${
         item.type === '+'
           ? 'border-l-4 border-l-green-500 pl-2'
           : 'border-l-4 border-l-red-500 pl-2'
       }`}
       role="row"
     >
-      <div className="text-xs text-text-secondary w-8 text-center flex-shrink-0 font-mono">
+      <div className="text-xs text-text-secondary w-6 text-center flex-shrink-0 font-mono">
         {rowNumber}
       </div>
       <div className="flex-grow min-w-0">
@@ -144,18 +144,14 @@ export function BudgetRow({
       <button
         type="button"
         onClick={toggleType}
-        className="min-w-[44px] min-h-[44px] flex items-center justify-center"
+        className={`h-7 w-7 flex items-center justify-center rounded-full text-sm font-semibold transition-colors ${
+          item.type === '+'
+            ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
+            : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
+        }`}
         aria-label={`Toggle type, currently ${item.type}`}
       >
-        <span
-          className={`w-8 h-8 flex items-center justify-center rounded-full font-bold text-lg transition-colors ${
-            item.type === '+'
-              ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
-              : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
-          }`}
-        >
-          {item.type}
-        </span>
+        {item.type}
       </button>
 
       <div className="w-20 sm:w-24">
@@ -174,7 +170,7 @@ export function BudgetRow({
       <button
         type="button"
         onClick={handleDelete}
-        className="text-gray-400 hover:text-red-500 p-3 transition-colors"
+        className="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 dark:text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950 transition-all"
         aria-label="Delete item"
       >
         <svg
@@ -183,7 +179,7 @@ export function BudgetRow({
           viewBox="0 0 24 24"
           strokeWidth={1.5}
           stroke="currentColor"
-          className="w-5 h-5"
+          className="w-[18px] h-[18px]"
         >
           <path
             strokeLinecap="round"

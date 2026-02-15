@@ -96,20 +96,20 @@ export function BudgetTable({
 
   return (
     <div className="flex flex-col h-full w-full max-w-2xl mx-auto">
-      <div className="flex-grow overflow-auto pb-24 px-4">
+      <div className="flex-grow overflow-auto pb-20 px-2">
         {items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-48 text-gray-400 gap-2">
+          <div className="flex flex-col items-center justify-center h-32 text-gray-400 gap-2">
             <p>No items yet.</p>
             <p>Tap &quot;Add item&quot; to start.</p>
           </div>
         ) : (
           <div className="flex flex-col">
-            <div className="flex px-2 py-2 text-xs font-semibold text-text-secondary uppercase tracking-wider border-b border-border">
-              <div className="w-8 text-center flex-shrink-0">#</div>
+            <div className="flex px-2 py-1.5 text-xs font-semibold text-text-secondary uppercase tracking-wider border-b border-border">
+              <div className="w-6 text-center flex-shrink-0">#</div>
               <div className="flex-grow pl-2">Name</div>
               <div className="w-8 text-center">Type</div>
               <div className="w-20 sm:w-24 text-right">Amount</div>
-              <div className="w-9"></div>
+              <div className="w-8"></div>
             </div>
             {items.map((item, index) => (
               <BudgetRow
@@ -125,11 +125,11 @@ export function BudgetTable({
           </div>
         )}
 
-        <div className="mt-6 flex gap-3">
+        <div className="mt-3 flex gap-3">
           <button
             type="button"
             onClick={handleAddItems}
-            className="flex-grow flex items-center justify-center py-3 border-2 border-dashed border-border rounded-lg text-gray-500 hover:text-gray-700 hover:border-gray-400 transition-colors"
+            className="flex-grow flex items-center justify-center py-2 border-2 border-dashed border-border rounded-lg text-gray-500 hover:text-gray-700 hover:border-gray-400 transition-colors"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -154,7 +154,7 @@ export function BudgetTable({
               <button
                 type="button"
                 onClick={handleTrimRows}
-                className="px-4 py-3 text-sm font-medium text-text-secondary hover:text-text-primary transition-colors border border-border rounded-lg"
+                className="px-4 py-2 text-sm font-medium text-text-secondary hover:text-text-primary transition-colors border border-border rounded-lg"
                 title="Remove empty rows from bottom"
               >
                 Trim
@@ -184,7 +184,7 @@ export function BudgetTable({
         </div>
       )}
 
-      <div className="fixed bottom-0 left-0 right-0 bg-bg-primary border-t border-border p-4 shadow-lg z-10">
+      <div className="fixed bottom-0 left-0 right-0 bg-bg-primary border-t border-border p-3 shadow-lg z-10">
         <div className="max-w-2xl mx-auto flex justify-between items-center text-xl font-bold">
           <span className="text-text-secondary">Total</span>
           <span

@@ -74,8 +74,12 @@ describe('BudgetTable', () => {
     expect(screen.getByDisplayValue('Salary')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Rent')).toBeInTheDocument();
 
-    // Total should be 5000 - 1500 = 3500
-    expect(screen.getByText('+$3,500.00')).toBeInTheDocument();
+    // Income: +5000
+    expect(screen.getByText('+5,000.00')).toBeInTheDocument();
+    // Expenses: -1500
+    expect(screen.getByText('-1,500.00')).toBeInTheDocument();
+    // Total: +3500
+    expect(screen.getByText('+3,500.00')).toBeInTheDocument();
   });
 
   it('handles add item click', () => {
@@ -117,6 +121,9 @@ describe('BudgetTable', () => {
       />
     );
 
-    expect(screen.getByText('-$100.00')).toBeInTheDocument();
+    expect(screen.getByText('+0.00')).toBeInTheDocument(); // Income
+    // Use getAllByText because "-100.00" appears twice (Expenses and Total)
+    const negativeValues = screen.getAllByText('-100.00');
+    expect(negativeValues).toHaveLength(2);
   });
 });

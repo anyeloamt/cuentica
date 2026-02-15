@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, vi } from 'vitest';
 
+import { AuthProvider } from '../../context/AuthContext';
 import { Header } from './Header';
 
 vi.mock('../Settings/ThemeToggle', () => ({
@@ -16,7 +17,9 @@ describe('Header', () => {
   it('renders "Cuentica" title on home route', () => {
     render(
       <MemoryRouter initialEntries={['/']}>
-        <Header />
+        <AuthProvider>
+          <Header />
+        </AuthProvider>
       </MemoryRouter>
     );
     expect(screen.getByText('Cuentica')).toBeInTheDocument();
@@ -26,7 +29,9 @@ describe('Header', () => {
   it('shows back button and wallet name on wallet detail route', () => {
     render(
       <MemoryRouter initialEntries={['/wallet/123']}>
-        <Header />
+        <AuthProvider>
+          <Header />
+        </AuthProvider>
       </MemoryRouter>
     );
     expect(screen.getByText('My Budget')).toBeInTheDocument();
@@ -36,7 +41,9 @@ describe('Header', () => {
   it('shows fallback "Wallet" when wallet name is not found', () => {
     render(
       <MemoryRouter initialEntries={['/wallet/unknown']}>
-        <Header />
+        <AuthProvider>
+          <Header />
+        </AuthProvider>
       </MemoryRouter>
     );
     expect(screen.getByText('Wallet')).toBeInTheDocument();
@@ -45,7 +52,9 @@ describe('Header', () => {
   it('renders ThemeToggle', () => {
     render(
       <MemoryRouter>
-        <Header />
+        <AuthProvider>
+          <Header />
+        </AuthProvider>
       </MemoryRouter>
     );
     expect(screen.getByTestId('theme-toggle')).toBeInTheDocument();

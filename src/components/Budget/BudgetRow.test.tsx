@@ -23,7 +23,6 @@ describe('BudgetRow', () => {
     vi.useFakeTimers();
     mockUpdate.mockClear();
     mockDelete.mockClear();
-    window.confirm = vi.fn(() => true);
   });
 
   afterEach(() => {
@@ -96,25 +95,13 @@ describe('BudgetRow', () => {
     });
   });
 
-  it('handles delete with confirmation', () => {
+  it('deletes immediately without confirmation', () => {
     render(
       <BudgetRow item={item} rowNumber={1} onUpdate={mockUpdate} onDelete={mockDelete} />
     );
     const deleteBtn = screen.getByLabelText('Delete item');
     fireEvent.click(deleteBtn);
 
-    expect(window.confirm).toHaveBeenCalled();
     expect(mockDelete).toHaveBeenCalledWith('i1');
-  });
-
-  it('does not delete if confirmation cancelled', () => {
-    (window.confirm as unknown as ReturnType<typeof vi.fn>).mockReturnValue(false);
-    render(
-      <BudgetRow item={item} rowNumber={1} onUpdate={mockUpdate} onDelete={mockDelete} />
-    );
-    const deleteBtn = screen.getByLabelText('Delete item');
-    fireEvent.click(deleteBtn);
-
-    expect(mockDelete).not.toHaveBeenCalled();
   });
 });

@@ -10,6 +10,7 @@ const mockWhere = vi.fn();
 const mockAdd = vi.fn();
 const mockUpdate = vi.fn();
 const mockDelete = vi.fn();
+const mockGet = vi.fn();
 
 vi.mock('dexie-react-hooks', () => ({
   useLiveQuery: (querier: () => unknown) => querier(),
@@ -22,6 +23,7 @@ vi.mock('../lib/db', () => ({
       add: (...args: unknown[]) => mockAdd(...args),
       update: (...args: unknown[]) => mockUpdate(...args),
       delete: (...args: unknown[]) => mockDelete(...args),
+      get: (...args: unknown[]) => mockGet(...args),
     },
   },
 }));
@@ -143,18 +145,31 @@ describe('useBudgetItems', () => {
   describe('deleteItem', () => {
     it('deletes item successfully', async () => {
       const walletId = 'w1';
+      mockGet.mockResolvedValue({ id: 'i1', name: 'Rent' });
       mockDelete.mockResolvedValue(undefined);
 
       const { result } = renderHook(() => useBudgetItems(walletId));
       const res = await result.current.deleteItem('i1');
 
       expect(res).toEqual({ ok: true });
+      expect(mockGet).toHaveBeenCalledWith('i1');
       expect(mockDelete).toHaveBeenCalledWith('i1');
+    });
+
+    it('returns not-found if item does not exist', async () => {
+      const walletId = 'w1';
+      mockGet.mockResolvedValue(undefined);
+
+      const { result } = renderHook(() => useBudgetItems(walletId));
+      const res = await result.current.deleteItem('i1');
+
+      expect(res).toEqual({ ok: false, error: 'not-found' });
+      expect(mockDelete).not.toHaveBeenCalled();
     });
 
     it('returns db-error on failure', async () => {
       const walletId = 'w1';
-      mockDelete.mockRejectedValue(new Error('DB Error'));
+      mockGet.mockRejectedValue(new Error('DB Error'));
 
       const { result } = renderHook(() => useBudgetItems(walletId));
       const res = await result.current.deleteItem('i1');

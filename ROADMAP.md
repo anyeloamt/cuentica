@@ -1,7 +1,6 @@
 # Roadmap: Cuentica — Simple Budgets App
 
-> **Status**: v1.1 (updated 2026-02-14)
-> **Target Timeline**: MVP in 1-2 weeks
+> **Status**: v2.0 (updated 2026-02-15)
 > **Reference**: See `PRD.md` for full details
 
 ---
@@ -9,19 +8,21 @@
 ## Phase Summary
 
 ```
-Phase 1 ██████████████░░░░░░  Local MVP        (1-2 weeks)  ← Sprint 1.1-1.2 done
-Phase 2 ░░░░░░░░░░░░██████░░  Sync & Auth      (2-3 weeks)
-Phase 3 ░░░░░░░░░░░░░░░░████  Social & Power   (3-4 weeks)
+Phase 1 ████████████████████  Local MVP        ✅ COMPLETE
+Phase 2 ░░░░░░░░░░░░░░░░░░░░  Sync & Auth      (2-3 weeks)
+Phase 3 ░░░░░░░░░░░░░░░░░░░░  Social & Power   (3-4 weeks)
 Phase 4 ░░░░░░░░░░░░░░░░░░░░  Agenda           (TBD)
 ```
 
+**Current status**: Phase 1 complete. MVP deployed on Vercel. In user testing with primary user.
+
 ---
 
-## Phase 1 — Local MVP (Week 1-2)
+## Phase 1 — Local MVP ✅ COMPLETE
 
 > **Goal**: Functional app that replaces Quick Budget 100%. Offline-first. PDF export.
 
-### Sprint 1.1 — Foundation (Days 1-3) ✅ COMPLETE
+### Sprint 1.1 — Foundation ✅ COMPLETE
 
 | #     | Task                                                                                                   | Status |
 | ----- | ------------------------------------------------------------------------------------------------------ | ------ |
@@ -30,13 +31,11 @@ Phase 4 ░░░░░░░░░░░░░░░░░░░░  Agenda    
 | 1.1.3 | **Dexie.js Configuration**: Schema v1 (wallets + budgetItems), CuenticaDB instance                     | ✅     |
 | 1.1.4 | **Theme System**: ThemeContext + localStorage persistence + theme-aware meta color                     | ✅     |
 | 1.1.5 | **Routing**: React Router v6 (Home / Wallet Detail / 404)                                              | ✅     |
-| 1.1.6 | **Base Layout**: AppLayout with Header, scrollable Outlet, BottomTotal footer                          | ✅     |
+| 1.1.6 | **Base Layout**: AppLayout with Header, scrollable Outlet                                              | ✅     |
 
-**Deliverable**: App skeleton that installs as PWA, works offline (empty screen), has light/dark theme.
+> **Note**: Tailwind CSS v4 is used for styling (CSS-first config with `@theme` directive). GitHub Actions CI pipeline was also set up during this sprint.
 
-> **Note**: Tailwind CSS v4 is used for styling instead of CSS Modules (originally planned). GitHub Actions CI pipeline was also set up during this sprint.
-
-### Sprint 1.2 — Core: Wallets (Days 3-5) ✅ COMPLETE
+### Sprint 1.2 — Core: Wallets ✅ COMPLETE
 
 | #     | Task                                                                                     | Status |
 | ----- | ---------------------------------------------------------------------------------------- | ------ |
@@ -47,68 +46,75 @@ Phase 4 ░░░░░░░░░░░░░░░░░░░░  Agenda    
 | 1.2.5 | **Reorder Wallets**: Up/down buttons with order swap in transaction                      | ✅     |
 | 1.2.6 | **Empty state**: Handled in WalletList component                                         | ✅     |
 
-**Deliverable**: Functional Home screen. Create, view, delete, rename wallets. Data persists in IndexedDB.
-
 > **Note**: All wallet operations return discriminated union results (`{ ok: true } | { ok: false; error: '...' }`) for explicit error handling. Tests co-located with each component.
 
-### Sprint 1.3 — Core: Budget Table (Days 5-8) ⬜ NEXT
+### Sprint 1.3 — Core: Budget Table ✅ COMPLETE
 
-| #      | Task                                                                            | Priority | Estimated |
-| ------ | ------------------------------------------------------------------------------- | -------- | --------- |
-| 1.3.1  | **BudgetTable**: Render items of a wallet in a 3-column table                   | High     | 3h        |
-| 1.3.2  | **BudgetRow**: Name input + toggle +/- + amount input (inline editing)          | High     | 4h        |
-| 1.3.3  | **Auto-save**: Save changes to Dexie on blur/change (no save button)            | High     | 2h        |
-| 1.3.4  | **Add Rows**: "+ Add Rows" button (adds N empty rows)                           | High     | 1h        |
-| 1.3.5  | **Trim Rows**: "- Trim Rows" button (removes empty rows from the end)           | Medium   | 1h        |
-| 1.3.6  | **Delete Row**: Swipe or button x on individual row (with data)                 | High     | 1h        |
-| 1.3.7  | **Total Footer**: Sticky component: `+income -expenses = balance` with colors   | High     | 2h        |
-| 1.3.8  | **Numbering**: Row numbers on the left (1, 2, 3...)                             | Medium   | 30min     |
-| 1.3.9  | **Scroll with fixed footer**: Table scrolls, total always visible at the bottom | High     | 1h        |
-| 1.3.10 | **Numeric Keypad**: Amount input opens numeric keypad on mobile                 | High     | 30min     |
+| #      | Task                                                                            | Status |
+| ------ | ------------------------------------------------------------------------------- | ------ |
+| 1.3.1  | **BudgetTable**: Render items of a wallet in a 3-column table                   | ✅     |
+| 1.3.2  | **BudgetRow**: Name input + toggle +/- + amount input (inline editing)          | ✅     |
+| 1.3.3  | **Auto-save**: Save changes to Dexie on blur/change (no save button)            | ✅     |
+| 1.3.4  | **Add Rows**: "+ Add Rows" button (adds 5 empty rows)                           | ✅     |
+| 1.3.5  | **Trim Rows**: "- Trim Rows" button (removes empty rows from the end)           | ✅     |
+| 1.3.6  | **Delete Row**: Delete button on individual row with undo toast (5s)            | ✅     |
+| 1.3.7  | **Total Footer**: Fixed footer with colored total (+green / -red)               | ✅     |
+| 1.3.8  | **Numbering**: Row numbers on the left (1, 2, 3...)                             | ✅     |
+| 1.3.9  | **Scroll with fixed footer**: Table scrolls, total always visible at the bottom | ✅     |
+| 1.3.10 | **Numeric Keypad**: Amount input opens numeric keypad on mobile                 | ✅     |
 
-> **Current state**: `WalletDetailPage` is a placeholder stub. The `useBudgetItems` hook and `BudgetTable`/`BudgetRow`/`BudgetFooter` components need to be built.
+### Sprint 1.4 — PDF Export + Polish ✅ COMPLETE
 
-**Deliverable**: Complete budget table identical to Quick Budget. Inline editing. Auto-save. Live total.
+| #     | Task                                                                              | Status |
+| ----- | --------------------------------------------------------------------------------- | ------ |
+| 1.4.1 | **Generate PDF**: jsPDF + autotable with wallet name + budget table + total       | ✅     |
+| 1.4.2 | **Web Share API**: Share PDF on mobile (WhatsApp, email, etc.)                    | ✅     |
+| 1.4.3 | **Fallback download**: On desktop or browsers without Share API → direct download | ✅     |
+| 1.4.4 | **PDF button in header**: Share/export icon in the detail bar                     | ✅     |
+| 1.4.5 | **Offline Testing**: Verified everything works in airplane mode                   | ✅     |
+| 1.4.6 | **Performance**: Lighthouse audit passed (PWA > 95)                               | ✅     |
+| 1.4.7 | **Responsive**: Verified on mobile (360px), tablet (768px), desktop (1280px)      | ✅     |
+| 1.4.8 | **Deploy Vercel**: Connected GitHub repo with auto-deploy                         | ✅     |
+| 1.4.9 | **Provisional Domain**: Set up `cuentica.vercel.app`                              | ✅     |
 
-### Sprint 1.4 — PDF Export + Polish (Days 8-10)
+### Post-MVP Polish ✅ COMPLETE
 
-| #     | Task                                                                              | Priority | Estimated |
-| ----- | --------------------------------------------------------------------------------- | -------- | --------- |
-| 1.4.1 | **Generate PDF**: jsPDF + autotable. Logo on top + wallet name + table + total    | High     | 3h        |
-| 1.4.2 | **Web Share API**: Share PDF on mobile (WhatsApp, email, etc.)                    | High     | 2h        |
-| 1.4.3 | **Fallback download**: On desktop or browsers without Share API → direct download | High     | 1h        |
-| 1.4.4 | **PDF button in header**: Share/export icon in the detail bar                     | High     | 30min     |
-| 1.4.5 | **Offline Testing**: Verify everything works in airplane mode                     | High     | 2h        |
-| 1.4.6 | **Performance**: Lighthouse audit → PWA score > 95, Performance > 90              | Medium   | 2h        |
-| 1.4.7 | **Responsive**: Check on mobile (360px), tablet (768px), desktop (1280px)         | High     | 2h        |
-| 1.4.8 | **Deploy Vercel**: Connect GitHub repo → auto-deploy                              | High     | 1h        |
-| 1.4.9 | **Provisional Domain**: Set up subdomain or `[appname].vercel.app`                | Medium   | 30min     |
+| #   | Task                                                                               | Status |
+| --- | ---------------------------------------------------------------------------------- | ------ |
+| 54  | **Round compact buttons**: Consistent `rounded-full` icon buttons across the app   | ✅     |
+| 55  | **Compact layout**: Tighter spacing, smaller header, reduced margins               | ✅     |
+| 56  | **Perceived performance**: `React.memo`, `useMemo`, `useCallback`, FOUC prevention | ✅     |
+| 57  | **PWA prompt overlap**: Auto-dismiss offline-ready prompt, prevent FAB overlap     | ✅     |
 
-**Deliverable**: Full MVP. Works offline. Generates and shares PDF. Deployed on Vercel.
+> **Note**: Fixed invisible icons in dark mode (global CSS `button` rules overriding Tailwind). Removed duplicate BottomTotal footer.
 
-### MVP Launch Checklist
+### MVP Launch Checklist ✅
 
 - [x] Create wallet
 - [x] Delete wallet
 - [x] Rename wallet
 - [x] Reorder wallets
-- [ ] 3-column table with inline editing
-- [ ] Live total (sticky footer)
-- [ ] Add/trim rows
-- [ ] Export PDF with branding
-- [ ] Share PDF (Web Share API)
+- [x] 3-column table with inline editing
+- [x] Live total (fixed footer)
+- [x] Add/trim rows
+- [x] Delete row with undo
+- [x] Export PDF with branding
+- [x] Share PDF (Web Share API)
 - [x] Light/dark theme with toggle
 - [x] Installable PWA
 - [x] 100% offline after first load
 - [x] CI pipeline (lint + typecheck + test + build)
-- [ ] Deploy on Vercel
-- [ ] Lighthouse PWA > 95
+- [x] Deploy on Vercel
+- [x] Lighthouse PWA > 95
+- [x] Performance memoization
+- [x] FOUC prevention (theme applied before React render)
 
 ---
 
-## Phase 2 — Sync & Auth (Week 3-5)
+## Phase 2 — Sync & Auth (Pending)
 
 > **Goal**: Multi-device access. Data travels with the user.
+> **Prerequisite**: User feedback from Phase 1 testing incorporated first.
 
 ### 2.1 — Supabase Setup
 
@@ -149,7 +155,7 @@ Phase 4 ░░░░░░░░░░░░░░░░░░░░  Agenda    
 
 ---
 
-## Phase 3 — Social & Power Features (Week 6-8)
+## Phase 3 — Social & Power Features (Pending)
 
 > **Goal**: Share, organize, export with more power.
 
@@ -179,12 +185,12 @@ Phase 4 ░░░░░░░░░░░░░░░░░░░░  Agenda    
 
 ### 3.4 — UX Improvements
 
-| #     | Task                                                       | Estimated |
-| ----- | ---------------------------------------------------------- | --------- |
-| 3.4.1 | Total visible in the wallet list (without entering detail) | 2h        |
-| 3.4.2 | Duplicate wallet (copy structure as template)              | 2h        |
-| 3.4.3 | Undo/redo for accidental edits                             | 4h        |
-| 3.4.4 | New version available notification (SW update)             | 2h        |
+| #         | Task                                                       | Estimated              |
+| --------- | ---------------------------------------------------------- | ---------------------- |
+| 3.4.1     | Total visible in the wallet list (without entering detail) | 2h                     |
+| 3.4.2     | Duplicate wallet (copy structure as template)              | 2h                     |
+| 3.4.3     | Undo/redo for accidental edits                             | 4h                     |
+| ~~3.4.4~~ | ~~New version available notification (SW update)~~         | ✅ Done (ReloadPrompt) |
 
 ### 3.5 — Alternative Hosting
 
@@ -243,7 +249,7 @@ Phase 4 ░░░░░░░░░░░░░░░░░░░░  Agenda    
 
 ---
 
-## External Dependencies (Phase 1 MVP)
+## External Dependencies
 
 ```json
 {
@@ -252,7 +258,9 @@ Phase 4 ░░░░░░░░░░░░░░░░░░░░  Agenda    
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.30.3",
     "dexie": "^4.3.0",
-    "dexie-react-hooks": "^4.2.0"
+    "dexie-react-hooks": "^4.2.0",
+    "jspdf": "^4.1.0",
+    "jspdf-autotable": "^5.0.7"
   },
   "devDependencies": {
     "vite": "^5.4.14",
@@ -269,23 +277,9 @@ Phase 4 ░░░░░░░░░░░░░░░░░░░░  Agenda    
 }
 ```
 
-**Production dependencies**: 5 (jsPDF + jspdf-autotable will be added in Sprint 1.4)
+**Production dependencies**: 7
 
-> **Note**: Tailwind CSS v4 replaced CSS Modules as the styling solution. fake-indexeddb enables Dexie.js testing without a real browser.
-
----
-
-## Summary Schedule
-
-| Week    | Phase     | Deliverable                   |
-| ------- | --------- | ----------------------------- |
-| **1**   | 1.1 + 1.2 | PWA Skeleton + Wallet CRUD    |
-| **2**   | 1.3 + 1.4 | Budget Table + PDF + Deploy   |
-| **3-4** | 2.1 + 2.2 | Supabase + Optional Auth      |
-| **5**   | 2.3 + 2.4 | Sync engine + optional fields |
-| **6-7** | 3.1 + 3.2 | Shared links + categories     |
-| **8**   | 3.3 + 3.4 | Advanced export + UX polish   |
-| **TBD** | 4         | Agenda (requires interview)   |
+> **Note**: Tailwind CSS v4 uses CSS-first config (`@theme` directive in `theme.css`, `@custom-variant dark` for dark mode via `data-theme="dark"` attribute). fake-indexeddb enables Dexie.js testing without a real browser.
 
 ---
 
@@ -293,7 +287,11 @@ Phase 4 ░░░░░░░░░░░░░░░░░░░░  Agenda    
 
 1. ~~**Define name and domain**~~ → Settled on "Cuentica"
 2. ~~**Create GitHub repo**~~ → `anyeloamt/cuentica` on GitHub
-3. ~~**Sprint 1.1**~~ → Foundation complete (Vite + React + PWA + Dexie + Tailwind + CI)
-4. ~~**Sprint 1.2**~~ → Wallet CRUD complete (create, delete, rename, reorder)
-5. **Sprint 1.3** → Build budget table (BudgetTable, BudgetRow, BudgetFooter, useBudgetItems)
-6. **Sprint 1.4** → PDF export + Vercel deploy + Lighthouse audit
+3. ~~**Sprint 1.1**~~ → Foundation complete
+4. ~~**Sprint 1.2**~~ → Wallet CRUD complete
+5. ~~**Sprint 1.3**~~ → Budget table complete
+6. ~~**Sprint 1.4**~~ → PDF export + deploy complete
+7. ~~**Post-MVP polish**~~ → UI compaction, perf, dark mode fixes
+8. **User testing** → Primary user (wife) testing the app — collecting feedback
+9. **Incorporate feedback** → Fix issues surfaced during real usage
+10. **Phase 2** → Sync & Auth with Supabase (after feedback round)

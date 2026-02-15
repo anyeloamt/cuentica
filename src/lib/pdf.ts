@@ -3,6 +3,8 @@ import autoTable from 'jspdf-autotable';
 
 import type { BudgetItem } from '../types';
 
+import { formatAmount } from './format';
+
 export function generatePdf(walletName: string, items: BudgetItem[]): Blob {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -25,15 +27,7 @@ export function generatePdf(walletName: string, items: BudgetItem[]): Blob {
     if (item.type === '+') totalIncome += item.amount;
     else totalExpenses += item.amount;
 
-    return [
-      index + 1,
-      item.name,
-      item.type,
-      item.amount.toLocaleString(undefined, {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }),
-    ];
+    return [index + 1, item.name, item.type, formatAmount(item.amount)];
   });
 
   const balance = totalIncome - totalExpenses;
@@ -54,9 +48,9 @@ export function generatePdf(walletName: string, items: BudgetItem[]): Blob {
       }
     },
     foot: [
-      ['', '', 'Income', totalIncome.toFixed(2)],
-      ['', '', 'Expenses', totalExpenses.toFixed(2)],
-      ['', '', 'Balance', balance.toFixed(2)],
+      ['', '', 'Income', formatAmount(totalIncome)],
+      ['', '', 'Expenses', formatAmount(totalExpenses)],
+      ['', '', 'Balance', formatAmount(balance)],
     ],
     theme: 'striped',
     headStyles: { fillColor: [66, 66, 66] },

@@ -1,4 +1,21 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  MouseSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 
 import type { BudgetItem } from '../../types';
 import { formatAmount } from '../../lib/format';
@@ -15,6 +32,7 @@ interface BudgetTableProps {
   onUpdateItem: (id: string, changes: Partial<BudgetItem>) => void;
   onDeleteItem: (id: string) => Promise<{ ok: boolean }>;
   onRestoreItem?: (item: BudgetItem) => Promise<{ ok: boolean }>;
+  onReorderItems: (updates: { id: string; order: number }[]) => Promise<{ ok: boolean }>;
 }
 
 export function BudgetTable({
@@ -24,9 +42,27 @@ export function BudgetTable({
   onUpdateItem,
   onDeleteItem,
   onRestoreItem,
+  onReorderItems,
 }: BudgetTableProps) {
   const [deletedItems, setDeletedItems] = useState<BudgetItem[]>([]);
   const [lastAddedId, setLastAddedId] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(MouseSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 150,
+        tolerance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   useEffect(() => {
     if (deletedItems.length === 0) {
@@ -39,6 +75,35 @@ export function BudgetTable({
 
     return () => clearTimeout(timer);
   }, [deletedItems]);
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+
+      if (items && over && active.id !== over.id) {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+
+        if (oldIndex !== -1 && newIndex !== -1) {
+          const newItems = arrayMove(items, oldIndex, newIndex);
+          const sortedOrders = items.map((i) => i.order).sort((a, b) => a - b);
+
+          const reorderedUpdates = newItems.map((item, index) => ({
+            id: item.id!,
+            order: sortedOrders[index],
+          }));
+
+          (async () => {
+            const result = await onReorderItems(reorderedUpdates);
+            if (!result.ok) {
+              console.error('Failed to reorder items');
+            }
+          })();
+        }
+      }
+    },
+    [items, onReorderItems]
+  );
 
   const handleAddItems = useCallback(async () => {
     const result = await onAddItems();
@@ -124,23 +189,36 @@ export function BudgetTable({
         ) : (
           <div className="flex flex-col">
             <div className="flex px-2 py-1.5 text-xs font-semibold text-text-secondary uppercase tracking-wider border-b border-border">
+              <div className="w-8"></div>
               <div className="w-6 text-center flex-shrink-0">#</div>
               <div className="flex-grow pl-2">Name</div>
               <div className="w-8 text-center">Type</div>
               <div className="w-20 sm:w-24 text-right">Amount</div>
               <div className="w-8"></div>
             </div>
-            {items.map((item, index) => (
-              <BudgetRow
-                key={item.id}
-                item={item}
-                rowNumber={index + 1}
-                onUpdate={onUpdateItem}
-                onDelete={handleDeleteWithUndo}
-                // eslint-disable-next-line jsx-a11y/no-autofocus
-                autoFocus={item.id === lastAddedId}
-              />
-            ))}
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+              modifiers={[restrictToVerticalAxis]}
+            >
+              <SortableContext
+                items={items.map((item) => item.id!)}
+                strategy={verticalListSortingStrategy}
+              >
+                {items.map((item, index) => (
+                  <BudgetRow
+                    key={item.id}
+                    item={item}
+                    rowNumber={index + 1}
+                    onUpdate={onUpdateItem}
+                    onDelete={handleDeleteWithUndo}
+                    // eslint-disable-next-line jsx-a11y/no-autofocus
+                    autoFocus={item.id === lastAddedId}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
           </div>
         )}
 

@@ -13,8 +13,15 @@ export function WalletDetailPage(): JSX.Element {
   const walletId = id ?? '';
 
   const walletName = useWalletName(walletId) ?? 'Budget';
-  const { items, addItems, trimEmptyRows, updateItem, deleteItem, restoreItem } =
-    useBudgetItems(walletId);
+  const {
+    items,
+    addItems,
+    trimEmptyRows,
+    updateItem,
+    deleteItem,
+    restoreItem,
+    reorderBudgetItems,
+  } = useBudgetItems(walletId);
 
   const [exporting, setExporting] = useState(false);
 
@@ -91,6 +98,7 @@ export function WalletDetailPage(): JSX.Element {
         onUpdateItem={updateItem}
         onDeleteItem={deleteItem}
         onRestoreItem={restoreItem}
+        onReorderItems={reorderBudgetItems}
       />
     </div>
   );

@@ -9,13 +9,13 @@ import { WalletList } from './WalletList';
 describe('WalletList', () => {
   const mockOnDeleteWallet = vi.fn();
   const mockOnRenameWallet = vi.fn();
-  const mockOnReorderWallet = vi.fn();
+  const mockOnReorderWallets = vi.fn();
 
   const defaultProps = {
     wallets: [],
     onDeleteWallet: mockOnDeleteWallet,
     onRenameWallet: mockOnRenameWallet,
-    onReorderWallet: mockOnReorderWallet,
+    onReorderWallets: mockOnReorderWallets,
   };
 
   it('renders loading fallback while wallets are undefined', () => {
@@ -150,7 +150,7 @@ describe('WalletList', () => {
     expect(mockOnRenameWallet).toHaveBeenCalledWith('w1', 'New Name');
   });
 
-  it('renders reorder buttons', () => {
+  it('renders drag handles', () => {
     const wallets: Wallet[] = [
       { id: 'w1', name: '1', order: 1, createdAt: 1, updatedAt: 1 },
       { id: 'w2', name: '2', order: 2, createdAt: 1, updatedAt: 1 },
@@ -162,27 +162,7 @@ describe('WalletList', () => {
       </MemoryRouter>
     );
 
-    const upButtons = screen.getAllByRole('button', { name: /move up/i });
-    const downButtons = screen.getAllByRole('button', { name: /move down/i });
-
-    expect(upButtons).toHaveLength(1);
-    expect(downButtons).toHaveLength(1);
-  });
-
-  it('calls onReorderWallet when clicked', () => {
-    const wallets: Wallet[] = [
-      { id: 'w1', name: '1', order: 1, createdAt: 1, updatedAt: 1 },
-      { id: 'w2', name: '2', order: 2, createdAt: 1, updatedAt: 1 },
-    ];
-
-    render(
-      <MemoryRouter>
-        <WalletList {...defaultProps} wallets={wallets} />
-      </MemoryRouter>
-    );
-
-    const downButton = screen.getByRole('button', { name: /move down/i });
-    fireEvent.click(downButton);
-    expect(mockOnReorderWallet).toHaveBeenCalledWith('w1', 'down');
+    const dragHandles = screen.getAllByLabelText(/drag to reorder/i);
+    expect(dragHandles).toHaveLength(2);
   });
 });

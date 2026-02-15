@@ -9,7 +9,7 @@ const mockUseWallets = vi.fn();
 const mockCreateWallet = vi.fn();
 const mockDeleteWallet = vi.fn();
 const mockRenameWallet = vi.fn();
-const mockReorderWallet = vi.fn();
+const mockReorderWallets = vi.fn();
 
 vi.mock('../../hooks/useWallets', () => ({
   useWallets: () => mockUseWallets(),
@@ -21,13 +21,13 @@ describe('HomePage', () => {
     mockCreateWallet.mockReset();
     mockDeleteWallet.mockReset();
     mockRenameWallet.mockReset();
-    mockReorderWallet.mockReset();
+    mockReorderWallets.mockReset();
     mockUseWallets.mockReturnValue({
       wallets: [],
       createWallet: mockCreateWallet,
       deleteWallet: mockDeleteWallet,
       renameWallet: mockRenameWallet,
-      reorderWallet: mockReorderWallet,
+      reorderWallets: mockReorderWallets,
     });
   });
 
@@ -48,7 +48,7 @@ describe('HomePage', () => {
       createWallet: mockCreateWallet,
       deleteWallet: mockDeleteWallet,
       renameWallet: mockRenameWallet,
-      reorderWallet: mockReorderWallet,
+      reorderWallets: mockReorderWallets,
     });
 
     render(
@@ -74,7 +74,7 @@ describe('HomePage', () => {
       createWallet: mockCreateWallet,
       deleteWallet: mockDeleteWallet,
       renameWallet: mockRenameWallet,
-      reorderWallet: mockReorderWallet,
+      reorderWallets: mockReorderWallets,
     });
 
     render(
@@ -181,7 +181,7 @@ describe('HomePage', () => {
       createWallet: mockCreateWallet,
       deleteWallet: mockDeleteWallet,
       renameWallet: mockRenameWallet,
-      reorderWallet: mockReorderWallet,
+      reorderWallets: mockReorderWallets,
     });
     mockDeleteWallet.mockResolvedValue({ ok: true });
     const user = userEvent.setup();
@@ -237,7 +237,7 @@ describe('HomePage', () => {
       createWallet: mockCreateWallet,
       deleteWallet: mockDeleteWallet,
       renameWallet: mockRenameWallet,
-      reorderWallet: mockReorderWallet,
+      reorderWallets: mockReorderWallets,
     });
     const user = userEvent.setup();
 
@@ -309,7 +309,7 @@ describe('HomePage', () => {
       createWallet: mockCreateWallet,
       deleteWallet: mockDeleteWallet,
       renameWallet: mockRenameWallet,
-      reorderWallet: mockReorderWallet,
+      reorderWallets: mockReorderWallets,
     });
 
     render(
@@ -326,7 +326,7 @@ describe('HomePage', () => {
     expect(mockRenameWallet).toHaveBeenCalledWith('w1', 'New Name');
   });
 
-  it('calls reorderWallet when move button clicked', async () => {
+  it('renders drag handles for wallets', () => {
     mockUseWallets.mockReturnValue({
       wallets: [
         { id: 'w1', name: '1', order: 1, createdAt: 1, updatedAt: 1 },
@@ -335,7 +335,7 @@ describe('HomePage', () => {
       createWallet: mockCreateWallet,
       deleteWallet: mockDeleteWallet,
       renameWallet: mockRenameWallet,
-      reorderWallet: mockReorderWallet,
+      reorderWallets: mockReorderWallets,
     });
 
     render(
@@ -344,9 +344,7 @@ describe('HomePage', () => {
       </MemoryRouter>
     );
 
-    const downButton = screen.getByRole('button', { name: /move down/i });
-    fireEvent.click(downButton);
-
-    expect(mockReorderWallet).toHaveBeenCalledWith('w1', 'down');
+    const dragHandles = screen.getAllByLabelText(/drag to reorder/i);
+    expect(dragHandles).toHaveLength(2);
   });
 });

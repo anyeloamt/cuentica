@@ -12,7 +12,7 @@ export function HomePage(): JSX.Element {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [walletToDelete, setWalletToDelete] = useState<Wallet | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const { wallets, createWallet, deleteWallet, renameWallet, reorderWallet } =
+  const { wallets, createWallet, deleteWallet, renameWallet, reorderWallets } =
     useWallets();
   const [cachedWallets, setCachedWallets] = useState<Wallet[] | undefined>(undefined);
 
@@ -38,13 +38,6 @@ export function HomePage(): JSX.Element {
     [renameWallet]
   );
 
-  const handleReorder = useCallback(
-    async (id: string, direction: 'up' | 'down') => {
-      await reorderWallet(id, direction);
-    },
-    [reorderWallet]
-  );
-
   const handleOpenCreateModal = useCallback(() => {
     setIsCreateModalOpen(true);
   }, []);
@@ -63,7 +56,7 @@ export function HomePage(): JSX.Element {
         wallets={wallets ?? cachedWallets}
         onDeleteWallet={setWalletToDelete}
         onRenameWallet={handleRename}
-        onReorderWallet={handleReorder}
+        onReorderWallets={reorderWallets}
       />
       <FloatingActionButton onClick={handleOpenCreateModal} label="Add Wallet" />
       {isCreateModalOpen && (

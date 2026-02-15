@@ -75,7 +75,7 @@ describe('BudgetTable', () => {
     expect(screen.getByDisplayValue('Rent')).toBeInTheDocument();
 
     // Total should be 5000 - 1500 = 3500
-    expect(screen.getByText('+$3500.00')).toBeInTheDocument();
+    expect(screen.getByText('+$3,500.00')).toBeInTheDocument();
   });
 
   it('handles add item click', () => {

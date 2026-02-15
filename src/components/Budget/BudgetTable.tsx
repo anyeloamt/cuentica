@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 
 import type { BudgetItem } from '../../types';
+import { formatAmount } from '../../lib/format';
 
 import { BudgetRow } from './BudgetRow';
 
@@ -203,7 +204,7 @@ export function BudgetTable({
                 : 'text-red-600 dark:text-red-400'
             }
           >
-            {total >= 0 ? '+' : '-'}${Math.abs(total).toFixed(2)}
+            {total >= 0 ? '+' : '-'}${formatAmount(Math.abs(total))}
           </span>
         </div>
       </div>

@@ -36,12 +36,12 @@ export function WalletDetailPage(): JSX.Element {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex justify-end px-4 pt-2">
+      <div className="flex justify-end px-2 pt-1">
         <button
           type="button"
           onClick={handleExport}
           disabled={exporting || !hasExportableItems}
-          className="p-2 text-text-secondary hover:text-text-primary disabled:opacity-50"
+          className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-bg-secondary text-text-secondary transition-all hover:border-accent hover:text-accent disabled:opacity-50 cursor-pointer"
           aria-label="Export PDF"
           aria-busy={exporting}
         >
@@ -73,7 +73,7 @@ export function WalletDetailPage(): JSX.Element {
               viewBox="0 0 24 24"
               strokeWidth={1.5}
               stroke="currentColor"
-              className="w-6 h-6"
+              className="w-5 h-5"
             >
               <path
                 strokeLinecap="round"

@@ -86,12 +86,12 @@ export function WalletList({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {walletsWithId.map((wallet, index) => (
         <Link
           key={wallet.id}
           to={`/wallet/${wallet.id}`}
-          className="group relative flex p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md hover:border-blue-200 dark:hover:border-blue-800 transition-all duration-200 items-stretch"
+          className="group relative flex p-3 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md hover:border-blue-200 dark:hover:border-blue-800 transition-all duration-200 items-stretch"
         >
           <div className="flex flex-col justify-center mr-3 space-y-1">
             {index > 0 && (

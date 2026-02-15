@@ -46,11 +46,11 @@ button:not([class]):focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
-a {
+a:not([class]) {
   font-weight: 500;
   color: var(--accent);
   text-decoration: inherit;
 }
-a:hover {
+a:not([class]):hover {
   color: var(--text-primary);
 }

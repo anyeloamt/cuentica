@@ -13,7 +13,7 @@ interface LocalMigrationData {
   budgetItems: BudgetItemWithId[];
 }
 
-interface SupabaseWalletRow {
+export interface SupabaseWalletRow {
   id: string;
   user_id: string;
   name: string;
@@ -26,7 +26,7 @@ interface SupabaseWalletRow {
   deleted: boolean;
 }
 
-interface SupabaseBudgetItemRow {
+export interface SupabaseBudgetItemRow {
   id: string;
   user_id: string;
   wallet_id: string;
@@ -44,7 +44,10 @@ interface SupabaseBudgetItemRow {
 
 export type MigrationMode = 'skipped-empty' | 'pushed' | 'pulled';
 
-const toSupabaseWallet = (wallet: WalletWithId, userId: string): SupabaseWalletRow => ({
+export const toSupabaseWallet = (
+  wallet: WalletWithId,
+  userId: string
+): SupabaseWalletRow => ({
   id: wallet.id,
   user_id: userId,
   name: wallet.name,
@@ -57,7 +60,7 @@ const toSupabaseWallet = (wallet: WalletWithId, userId: string): SupabaseWalletR
   deleted: wallet.deleted ?? false,
 });
 
-const toSupabaseBudgetItem = (
+export const toSupabaseBudgetItem = (
   budgetItem: BudgetItemWithId,
   userId: string
 ): SupabaseBudgetItemRow => ({
@@ -76,7 +79,7 @@ const toSupabaseBudgetItem = (
   deleted: budgetItem.deleted ?? false,
 });
 
-const toLocalWallet = (wallet: SupabaseWalletRow): WalletWithId => ({
+export const toLocalWallet = (wallet: SupabaseWalletRow): WalletWithId => ({
   id: wallet.id,
   name: wallet.name,
   order: wallet.order,
@@ -88,7 +91,9 @@ const toLocalWallet = (wallet: SupabaseWalletRow): WalletWithId => ({
   deleted: wallet.deleted,
 });
 
-const toLocalBudgetItem = (budgetItem: SupabaseBudgetItemRow): BudgetItemWithId => ({
+export const toLocalBudgetItem = (
+  budgetItem: SupabaseBudgetItemRow
+): BudgetItemWithId => ({
   id: budgetItem.id,
   walletId: budgetItem.wallet_id,
   order: budgetItem.order,

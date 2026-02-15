@@ -40,13 +40,18 @@ describe('useWallets', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUpdate.mockResolvedValue(1);
+    const mockFilter = vi.fn().mockReturnValue({
+      toArray: mockToArray,
+    });
     mockOrderBy.mockReturnValue({
+      filter: mockFilter,
       toArray: mockToArray,
       last: mockLast,
     });
-    // Mock where().delete() chain
+    // Mock where().modify() chain (soft-delete)
     mockWhere.mockReturnValue({
       delete: mockDeleteBudgetItems,
+      modify: vi.fn().mockResolvedValue(0),
     });
     mockTransaction.mockImplementation(async (...args) => {
       const callback = args[args.length - 1];
@@ -160,9 +165,9 @@ describe('useWallets', () => {
   });
 
   describe('deleteWallet', () => {
-    it('deletes wallet and associated budget items', async () => {
+    it('soft-deletes wallet and associated budget items', async () => {
       mockToArray.mockReturnValue([]);
-      mockGet.mockResolvedValue({ id: 'w1' }); // Wallet exists
+      mockGet.mockResolvedValue({ id: 'w1' });
 
       const { result } = renderHook(() => useWallets());
 
@@ -171,19 +176,22 @@ describe('useWallets', () => {
       expect(deleteResult).toEqual({ ok: true });
       expect(mockTransaction).toHaveBeenCalledWith(
         'rw',
-        expect.anything(), // db.wallets
-        expect.anything(), // db.budgetItems
+        expect.anything(),
+        expect.anything(),
         expect.any(Function)
       );
       expect(mockGet).toHaveBeenCalledWith('w1');
       expect(mockWhere).toHaveBeenCalledWith({ walletId: 'w1' });
-      expect(mockDeleteBudgetItems).toHaveBeenCalled();
-      expect(mockDeleteWallet).toHaveBeenCalledWith('w1');
+      expect(mockUpdate).toHaveBeenCalledWith('w1', {
+        deleted: true,
+        syncStatus: 'pending',
+        updatedAt: expect.any(Number),
+      });
     });
 
     it('returns not-found error if wallet does not exist', async () => {
       mockToArray.mockReturnValue([]);
-      mockGet.mockResolvedValue(undefined); // Wallet does not exist
+      mockGet.mockResolvedValue(undefined);
 
       const { result } = renderHook(() => useWallets());
 
@@ -191,8 +199,6 @@ describe('useWallets', () => {
 
       expect(deleteResult).toEqual({ ok: false, error: 'not-found' });
       expect(mockGet).toHaveBeenCalledWith('w1');
-      expect(mockDeleteWallet).not.toHaveBeenCalled();
-      expect(mockDeleteBudgetItems).not.toHaveBeenCalled();
     });
 
     it('returns db-error when transaction fails', async () => {
@@ -218,6 +224,7 @@ describe('useWallets', () => {
       expect(mockUpdate).toHaveBeenCalledWith('w1', {
         name: 'New Name',
         updatedAt: expect.any(Number),
+        syncStatus: 'pending',
       });
     });
 
@@ -263,10 +270,12 @@ describe('useWallets', () => {
       expect(mockUpdate).toHaveBeenCalledWith('w2', {
         order: 1,
         updatedAt: expect.any(Number),
+        syncStatus: 'pending',
       });
       expect(mockUpdate).toHaveBeenCalledWith('w1', {
         order: 2,
         updatedAt: expect.any(Number),
+        syncStatus: 'pending',
       });
     });
 
@@ -283,10 +292,12 @@ describe('useWallets', () => {
       expect(mockUpdate).toHaveBeenCalledWith('w1', {
         order: 2,
         updatedAt: expect.any(Number),
+        syncStatus: 'pending',
       });
       expect(mockUpdate).toHaveBeenCalledWith('w2', {
         order: 1,
         updatedAt: expect.any(Number),
+        syncStatus: 'pending',
       });
     });
 

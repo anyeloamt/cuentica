@@ -37,6 +37,12 @@ describe('useBudgetItems', () => {
     });
 
     mockEquals.mockReturnValue({
+      filter: () => ({
+        sortBy: mockSortBy,
+        reverse: () => ({
+          sortBy: mockSortBy,
+        }),
+      }),
       sortBy: mockSortBy,
       reverse: mockReverse,
     });
@@ -143,17 +149,21 @@ describe('useBudgetItems', () => {
   });
 
   describe('deleteItem', () => {
-    it('deletes item successfully', async () => {
+    it('soft-deletes item successfully', async () => {
       const walletId = 'w1';
       mockGet.mockResolvedValue({ id: 'i1', name: 'Rent' });
-      mockDelete.mockResolvedValue(undefined);
+      mockUpdate.mockResolvedValue(1);
 
       const { result } = renderHook(() => useBudgetItems(walletId));
       const res = await result.current.deleteItem('i1');
 
       expect(res).toEqual({ ok: true });
       expect(mockGet).toHaveBeenCalledWith('i1');
-      expect(mockDelete).toHaveBeenCalledWith('i1');
+      expect(mockUpdate).toHaveBeenCalledWith('i1', {
+        deleted: true,
+        syncStatus: 'pending',
+        updatedAt: expect.any(Number),
+      });
     });
 
     it('returns not-found if item does not exist', async () => {
@@ -164,7 +174,6 @@ describe('useBudgetItems', () => {
       const res = await result.current.deleteItem('i1');
 
       expect(res).toEqual({ ok: false, error: 'not-found' });
-      expect(mockDelete).not.toHaveBeenCalled();
     });
 
     it('returns db-error on failure', async () => {

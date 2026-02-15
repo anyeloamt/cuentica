@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { memo, useState, useEffect, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 
 import type { Wallet } from '../../types';
@@ -10,7 +10,7 @@ interface WalletListProps {
   onReorderWallet: (id: string, direction: 'up' | 'down') => Promise<void>;
 }
 
-export function WalletList({
+function WalletListComponent({
   wallets,
   onDeleteWallet,
   onRenameWallet,
@@ -26,9 +26,13 @@ export function WalletList({
     }
   }, [editingWalletId]);
 
-  // Ensure wallets is always treated as an array
-  const walletsArray = Array.isArray(wallets) ? wallets : [];
-  const walletsWithId = walletsArray.filter((wallet: Wallet) => Boolean(wallet.id));
+  const walletsWithId = useMemo(() => {
+    if (!wallets) {
+      return [];
+    }
+
+    return wallets.filter((wallet: Wallet) => Boolean(wallet.id));
+  }, [wallets]);
 
   const handleStartEdit = (e: React.SyntheticEvent, wallet: Wallet) => {
     e.preventDefault();
@@ -70,8 +74,18 @@ export function WalletList({
 
   if (wallets === undefined) {
     return (
-      <div className="flex items-center justify-center p-8 text-gray-500">
-        <p>Loading wallets...</p>
+      <div
+        className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
+        aria-live="polite"
+      >
+        {Array.from({ length: 3 }).map((_, index) => (
+          <div
+            key={index}
+            className="h-[92px] rounded-xl border border-gray-100 bg-white dark:border-gray-700 dark:bg-gray-800"
+            aria-hidden="true"
+          />
+        ))}
+        <p className="sr-only">Loading wallets...</p>
       </div>
     );
   }
@@ -198,3 +212,5 @@ export function WalletList({
     </div>
   );
 }
+
+export const WalletList = memo(WalletListComponent);

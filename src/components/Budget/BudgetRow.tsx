@@ -10,7 +10,7 @@ interface BudgetRowProps {
   autoFocus?: boolean;
 }
 
-export function BudgetRow({
+function BudgetRowComponent({
   item,
   rowNumber,
   onUpdate,
@@ -191,3 +191,14 @@ export function BudgetRow({
     </div>
   );
 }
+
+export const BudgetRow = React.memo(
+  BudgetRowComponent,
+  (prevProps, nextProps) =>
+    prevProps.rowNumber === nextProps.rowNumber &&
+    prevProps.autoFocus === nextProps.autoFocus &&
+    prevProps.item.id === nextProps.item.id &&
+    prevProps.item.name === nextProps.item.name &&
+    prevProps.item.type === nextProps.item.type &&
+    prevProps.item.amount === nextProps.item.amount
+);

@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 
 import { App } from './App';
 import { ThemeProvider } from './context/ThemeContext';
+import { AuthProvider } from './context/AuthContext';
 
 const mockCreateWallet = vi.fn().mockResolvedValue({ ok: true });
 const mockUseWallets = vi.fn();
@@ -37,7 +38,9 @@ describe('App', () => {
     render(
       <MemoryRouter>
         <ThemeProvider>
-          <App />
+          <AuthProvider>
+            <App />
+          </AuthProvider>
         </ThemeProvider>
       </MemoryRouter>
     );
@@ -48,7 +51,9 @@ describe('App', () => {
     render(
       <MemoryRouter initialEntries={['/']}>
         <ThemeProvider>
-          <App />
+          <AuthProvider>
+            <App />
+          </AuthProvider>
         </ThemeProvider>
       </MemoryRouter>
     );
@@ -59,7 +64,9 @@ describe('App', () => {
     render(
       <MemoryRouter initialEntries={['/wallet/abc']}>
         <ThemeProvider>
-          <App />
+          <AuthProvider>
+            <App />
+          </AuthProvider>
         </ThemeProvider>
       </MemoryRouter>
     );
@@ -70,7 +77,9 @@ describe('App', () => {
     render(
       <MemoryRouter initialEntries={['/nonexistent']}>
         <ThemeProvider>
-          <App />
+          <AuthProvider>
+            <App />
+          </AuthProvider>
         </ThemeProvider>
       </MemoryRouter>
     );

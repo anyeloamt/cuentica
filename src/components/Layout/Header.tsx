@@ -1,6 +1,7 @@
-import { useMatch, useNavigate } from 'react-router-dom';
+import { useMatch, useNavigate, Link } from 'react-router-dom';
 
 import { useWalletName } from '../../hooks/useWalletName';
+import { useAuth } from '../../context/AuthContext';
 import { ThemeToggle } from '../Settings/ThemeToggle';
 
 export function Header(): JSX.Element {
@@ -11,6 +12,7 @@ export function Header(): JSX.Element {
   const walletName = useWalletName(walletId);
   const isHome = !walletMatch;
 
+  const { user, loading, isConfigured } = useAuth();
   const title = isHome ? 'Cuentica' : (walletName ?? 'Wallet');
 
   return (
@@ -51,7 +53,19 @@ export function Header(): JSX.Element {
 
       <div className="flex items-center justify-end w-1/3 gap-2">
         <ThemeToggle />
-        {/* Placeholder for future actions */}
+        {!loading && user && (
+          <Link
+            to="/auth"
+            className="flex items-center justify-center w-8 h-8 rounded-full bg-accent text-white text-sm font-medium hover:opacity-90 transition-opacity"
+          >
+            {user.email?.charAt(0).toUpperCase()}
+          </Link>
+        )}
+        {!loading && !user && isConfigured && (
+          <Link to="/auth" className="text-sm font-medium text-accent hover:underline">
+            Sign in
+          </Link>
+        )}
       </div>
     </header>
   );

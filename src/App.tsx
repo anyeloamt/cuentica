@@ -1,6 +1,7 @@
 import { Route, Routes } from 'react-router-dom';
 
 import { HomePage } from './components/Home/HomePage';
+import { AuthPage } from './components/Auth/AuthPage';
 import { NotFoundPage } from './components/Home/NotFoundPage';
 import { WalletDetailPage } from './components/Budget/WalletDetailPage';
 import { InstallPrompt } from './components/Layout/InstallPrompt';
@@ -35,6 +36,7 @@ export function App(): JSX.Element {
       <Routes>
         <Route element={<AppLayout />}>
           <Route path="/" element={<HomePage />} />
+          <Route path="/auth" element={<AuthPage />} />
           <Route path="/wallet/:id" element={<WalletDetailPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>

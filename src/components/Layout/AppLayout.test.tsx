@@ -8,10 +8,6 @@ vi.mock('./Header', () => ({
   Header: () => <div data-testid="mock-header">Header</div>,
 }));
 
-vi.mock('./BottomTotal', () => ({
-  BottomTotal: () => <div data-testid="mock-bottom-total">BottomTotal</div>,
-}));
-
 describe('AppLayout', () => {
   it('renders Header and child content', () => {
     render(
@@ -25,19 +21,22 @@ describe('AppLayout', () => {
     );
     expect(screen.getByTestId('mock-header')).toBeInTheDocument();
     expect(screen.getByTestId('home-page')).toBeInTheDocument();
-    expect(screen.queryByTestId('mock-bottom-total')).not.toBeInTheDocument();
   });
 
-  it('shows BottomTotal on wallet detail route', () => {
+  it('renders Outlet for wallet detail route', () => {
     render(
       <MemoryRouter initialEntries={['/wallet/123']}>
         <Routes>
           <Route element={<AppLayout />}>
-            <Route path="/wallet/:id" element={<div>Wallet</div>} />
+            <Route
+              path="/wallet/:id"
+              element={<div data-testid="wallet-page">Wallet</div>}
+            />
           </Route>
         </Routes>
       </MemoryRouter>
     );
-    expect(screen.getByTestId('mock-bottom-total')).toBeInTheDocument();
+    expect(screen.getByTestId('mock-header')).toBeInTheDocument();
+    expect(screen.getByTestId('wallet-page')).toBeInTheDocument();
   });
 });

@@ -1,9 +1,10 @@
 .pwa-prompt {
   position: fixed;
   left: 1rem;
-  right: 1rem;
+  right: auto;
   bottom: 4rem;
-  max-width: 22rem;
+  width: auto;
+  max-width: min(22rem, calc(100vw - 6.5rem));
   padding: 0.75rem 1rem;
   border: 1px solid var(--border);
   border-radius: 0.5rem;

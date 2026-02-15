@@ -90,14 +90,23 @@ export function BudgetTable({
     setDeletedItems(failedItems);
   }, [deletedItems, onRestoreItem]);
 
-  const total = useMemo(() => {
+  const { income, expenses, balance } = useMemo(() => {
     if (items === undefined) {
-      return 0;
+      return { income: 0, expenses: 0, balance: 0 };
     }
 
-    return items.reduce((acc, item) => {
-      return acc + (item.type === '+' ? item.amount : -item.amount);
-    }, 0);
+    return items.reduce(
+      (acc, item) => {
+        if (item.type === '+') {
+          acc.income += item.amount;
+        } else {
+          acc.expenses += item.amount;
+        }
+        acc.balance = acc.income - acc.expenses;
+        return acc;
+      },
+      { income: 0, expenses: 0, balance: 0 }
+    );
   }, [items]);
 
   if (items === undefined) {
@@ -194,18 +203,28 @@ export function BudgetTable({
         </div>
       )}
 
-      <div className="fixed bottom-0 left-0 right-0 bg-bg-primary border-t border-border p-3 shadow-lg z-10">
-        <div className="max-w-2xl mx-auto flex justify-between items-center text-xl font-bold">
-          <span className="text-text-secondary">Total</span>
-          <span
-            className={
-              total >= 0
-                ? 'text-green-600 dark:text-green-400'
-                : 'text-red-600 dark:text-red-400'
-            }
-          >
-            {total >= 0 ? '+' : '-'}${formatAmount(Math.abs(total))}
-          </span>
+      <div className="fixed bottom-0 left-0 right-0 bg-bg-primary border-t border-border p-3 shadow-lg z-10 safe-area-bottom">
+        <div className="max-w-2xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-4 text-sm sm:text-base font-bold">
+          <div className="flex w-full sm:w-auto justify-between sm:justify-start gap-4">
+            <span className="text-green-600 dark:text-green-400">
+              +{formatAmount(income)}
+            </span>
+            <span className="text-red-600 dark:text-red-400">
+              -{formatAmount(expenses)}
+            </span>
+          </div>
+
+          <div className="flex w-full sm:w-auto justify-between sm:justify-end gap-2 border-t sm:border-t-0 border-border pt-2 sm:pt-0">
+            <span className="text-text-secondary">Total</span>
+            <span
+              className={
+                balance >= 0 ? 'text-text-primary' : 'text-red-600 dark:text-red-400'
+              }
+            >
+              {balance >= 0 ? '+' : '-'}
+              {formatAmount(Math.abs(balance))}
+            </span>
+          </div>
         </div>
       </div>
     </div>

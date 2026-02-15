@@ -4,6 +4,8 @@ import { useWalletName } from '../../hooks/useWalletName';
 import { useAuth } from '../../context/AuthContext';
 import { ThemeToggle } from '../Settings/ThemeToggle';
 
+import { SyncIndicator } from './SyncIndicator';
+
 export function Header(): JSX.Element {
   const navigate = useNavigate();
   const walletMatch = useMatch('/wallet/:id');
@@ -53,6 +55,7 @@ export function Header(): JSX.Element {
 
       <div className="flex items-center justify-end w-1/3 gap-2">
         <ThemeToggle />
+        {!loading && user && <SyncIndicator />}
         {!loading && user && (
           <Link
             to="/auth"

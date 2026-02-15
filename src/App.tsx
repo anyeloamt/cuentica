@@ -12,6 +12,7 @@ import { useInstallPrompt } from './hooks/useInstallPrompt';
 import { useIOSInstallPrompt } from './hooks/useIOSInstallPrompt';
 import { useMigration } from './hooks/useMigration';
 import { usePwaUpdatePrompt } from './hooks/usePwaUpdatePrompt';
+import { SyncProvider } from './hooks/useSync';
 import './components/Layout/pwaPrompts.css';
 
 export function App(): JSX.Element {
@@ -22,7 +23,7 @@ export function App(): JSX.Element {
   const { migrating, error, retry } = useMigration();
 
   return (
-    <>
+    <SyncProvider>
       <ReloadPrompt
         offlineReady={offlineReady}
         needRefresh={needRefresh}
@@ -74,6 +75,6 @@ export function App(): JSX.Element {
           </div>
         </div>
       )}
-    </>
+    </SyncProvider>
   );
 }

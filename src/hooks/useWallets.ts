@@ -29,7 +29,12 @@ export function useWallets(): {
     updates: { id: string; order: number }[]
   ) => Promise<{ ok: boolean; error?: string }>;
 } {
-  const wallets = useLiveQuery(() => db.wallets.orderBy('order').toArray());
+  const wallets = useLiveQuery(() =>
+    db.wallets
+      .orderBy('order')
+      .filter((wallet) => !wallet.deleted)
+      .toArray()
+  );
 
   const createWallet = async (name: string): Promise<CreateWalletResult> => {
     const trimmedName = name.trim();
@@ -47,6 +52,7 @@ export function useWallets(): {
         order: newOrder,
         createdAt: Date.now(),
         updatedAt: Date.now(),
+        syncStatus: 'pending',
       };
 
       await db.wallets.add(newWallet);
@@ -62,8 +68,18 @@ export function useWallets(): {
         const wallet = await db.wallets.get(id);
         if (!wallet) return { ok: false, error: 'not-found' };
 
-        await db.budgetItems.where({ walletId: id }).delete();
-        await db.wallets.delete(id);
+        const timestamp = Date.now();
+
+        await db.budgetItems.where({ walletId: id }).modify({
+          deleted: true,
+          syncStatus: 'pending',
+          updatedAt: timestamp,
+        });
+        await db.wallets.update(id, {
+          deleted: true,
+          syncStatus: 'pending',
+          updatedAt: timestamp,
+        });
         return { ok: true };
       });
     } catch (error) {
@@ -81,6 +97,7 @@ export function useWallets(): {
       const count = await db.wallets.update(id, {
         name: trimmedName,
         updatedAt: Date.now(),
+        syncStatus: 'pending',
       });
 
       if (count === 0) {
@@ -102,7 +119,10 @@ export function useWallets(): {
         const wallet = await db.wallets.get(id);
         if (!wallet) return { ok: false, error: 'not-found' };
 
-        const allWallets = await db.wallets.orderBy('order').toArray();
+        const allWallets = await db.wallets
+          .orderBy('order')
+          .filter((existingWallet) => !existingWallet.deleted)
+          .toArray();
         const currentIndex = allWallets.findIndex((w) => w.id === id);
 
         if (currentIndex === -1) return { ok: false, error: 'not-found' };
@@ -120,10 +140,12 @@ export function useWallets(): {
         await db.wallets.update(id, {
           order: adjacentWallet.order,
           updatedAt: Date.now(),
+          syncStatus: 'pending',
         });
         await db.wallets.update(adjacentWallet.id, {
           order: wallet.order,
           updatedAt: Date.now(),
+          syncStatus: 'pending',
         });
 
         return { ok: true };
@@ -145,6 +167,7 @@ export function useWallets(): {
             db.wallets.update(id, {
               order,
               updatedAt: timestamp,
+              syncStatus: 'pending',
             })
           )
         );

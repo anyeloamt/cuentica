@@ -5,7 +5,12 @@ import type { BudgetItem } from '../types';
 
 export function useBudgetItems(walletId: string) {
   const items = useLiveQuery(
-    () => db.budgetItems.where('walletId').equals(walletId).sortBy('order'),
+    () =>
+      db.budgetItems
+        .where('walletId')
+        .equals(walletId)
+        .filter((item) => !item.deleted)
+        .sortBy('order'),
     [walletId]
   );
 
@@ -14,6 +19,7 @@ export function useBudgetItems(walletId: string) {
       const lastItem = await db.budgetItems
         .where('walletId')
         .equals(walletId)
+        .filter((item) => !item.deleted)
         .reverse()
         .sortBy('order')
         .then((items) => items[0]);
@@ -45,6 +51,7 @@ export function useBudgetItems(walletId: string) {
       const lastItem = await db.budgetItems
         .where('walletId')
         .equals(walletId)
+        .filter((item) => !item.deleted)
         .reverse()
         .sortBy('order')
         .then((items) => items[0]);
@@ -83,6 +90,7 @@ export function useBudgetItems(walletId: string) {
       const allItems = await db.budgetItems
         .where('walletId')
         .equals(walletId)
+        .filter((item) => !item.deleted)
         .sortBy('order');
 
       const idsToDelete: string[] = [];
@@ -97,7 +105,10 @@ export function useBudgetItems(walletId: string) {
       }
 
       if (idsToDelete.length > 0) {
-        await db.budgetItems.bulkDelete(idsToDelete);
+        await db.budgetItems
+          .where('id')
+          .anyOf(idsToDelete)
+          .modify({ deleted: true, syncStatus: 'pending', updatedAt: Date.now() });
         return { ok: true as const, count: idsToDelete.length };
       }
 
@@ -129,7 +140,11 @@ export function useBudgetItems(walletId: string) {
       if (!exists) {
         return { ok: false, error: 'not-found' };
       }
-      await db.budgetItems.delete(id);
+      await db.budgetItems.update(id, {
+        deleted: true,
+        syncStatus: 'pending',
+        updatedAt: Date.now(),
+      });
       return { ok: true };
     } catch (error) {
       console.error('Failed to delete budget item:', error);
@@ -139,7 +154,13 @@ export function useBudgetItems(walletId: string) {
 
   const restoreItem = async (item: BudgetItem) => {
     try {
-      await db.budgetItems.add(item);
+      if (item.id) {
+        await db.budgetItems.update(item.id, {
+          deleted: false,
+          syncStatus: 'pending',
+          updatedAt: Date.now(),
+        });
+      }
       return { ok: true };
     } catch (error) {
       console.error('Failed to restore budget item:', error);

@@ -2,7 +2,6 @@ import { useMatch, useNavigate, Link } from 'react-router-dom';
 
 import { useWalletName } from '../../hooks/useWalletName';
 import { useAuth } from '../../context/AuthContext';
-import { isSupabaseConfigured } from '../../lib/supabase';
 import { ThemeToggle } from '../Settings/ThemeToggle';
 
 export function Header(): JSX.Element {
@@ -13,7 +12,7 @@ export function Header(): JSX.Element {
   const walletName = useWalletName(walletId);
   const isHome = !walletMatch;
 
-  const { user, loading } = useAuth();
+  const { user, loading, isConfigured } = useAuth();
   const title = isHome ? 'Cuentica' : (walletName ?? 'Wallet');
 
   return (
@@ -62,7 +61,7 @@ export function Header(): JSX.Element {
             {user.email?.charAt(0).toUpperCase()}
           </Link>
         )}
-        {!loading && !user && isSupabaseConfigured() && (
+        {!loading && !user && isConfigured && (
           <Link to="/auth" className="text-sm font-medium text-accent hover:underline">
             Sign in
           </Link>

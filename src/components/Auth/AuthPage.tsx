@@ -6,7 +6,8 @@ import { useAuth } from '../../context/AuthContext';
 import { GoogleIcon } from './GoogleIcon';
 
 export function AuthPage(): JSX.Element {
-  const { user, loading, signInWithGoogle, signInWithEmail, signOut } = useAuth();
+  const { user, loading, isConfigured, signInWithGoogle, signInWithEmail, signOut } =
+    useAuth();
   const [email, setEmail] = useState('');
   const [magicLinkLoading, setMagicLinkLoading] = useState(false);
   const [message, setMessage] = useState<{
@@ -14,12 +15,28 @@ export function AuthPage(): JSX.Element {
     text: string;
   } | null>(null);
 
-  if (loading) return <div className="p-4 text-center">Loading...</div>;
+  if (loading) return <div className="p-4 text-center text-text-primary">Loading...</div>;
+
+  if (!isConfigured) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] p-4">
+        <h2 className="text-xl font-medium mb-4 text-text-primary">Auth not available</h2>
+        <p className="text-text-secondary mb-6">
+          Sign-in is not configured. The app works fully offline.
+        </p>
+        <Link to="/" className="text-accent hover:underline">
+          ← Back to app
+        </Link>
+      </div>
+    );
+  }
 
   if (user) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] p-4">
-        <h2 className="text-xl font-medium mb-4">You&apos;re signed in</h2>
+        <h2 className="text-xl font-medium mb-4 text-text-primary">
+          You&apos;re signed in
+        </h2>
         <p className="text-text-secondary mb-6">
           Signed in as <span className="text-text-primary font-medium">{user.email}</span>
         </p>
@@ -36,12 +53,10 @@ export function AuthPage(): JSX.Element {
     );
   }
 
-  const handleGoogleSignIn = async () => {
-    try {
-      await signInWithGoogle();
-    } catch (error) {
-      console.error(error);
-      setMessage({ type: 'error', text: 'Failed to sign in with Google' });
+  const handleGoogleSignIn = async (): Promise<void> => {
+    const { ok, error } = await signInWithGoogle();
+    if (!ok) {
+      setMessage({ type: 'error', text: error ?? 'Failed to sign in with Google' });
     }
   };
 
@@ -80,7 +95,7 @@ export function AuthPage(): JSX.Element {
 
       <button
         onClick={handleGoogleSignIn}
-        className="w-full flex items-center justify-center gap-3 bg-white text-gray-800 border border-gray-300 rounded-lg p-3 font-medium hover:bg-gray-50 transition-colors cursor-pointer"
+        className="w-full flex items-center justify-center gap-3 bg-bg-secondary text-text-primary border border-border rounded-lg p-3 font-medium hover:opacity-90 transition-opacity cursor-pointer"
       >
         <GoogleIcon className="w-5 h-5" />
         Continue with Google
@@ -127,8 +142,8 @@ export function AuthPage(): JSX.Element {
         <div
           className={`mt-6 p-4 rounded-lg text-sm ${
             message.type === 'success'
-              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200'
-              : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200'
+              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+              : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
           }`}
         >
           {message.text}

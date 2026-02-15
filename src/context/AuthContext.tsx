@@ -1,13 +1,19 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, AuthChangeEvent, Session } from '@supabase/supabase-js';
 
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
+
+interface AuthResult {
+  ok: boolean;
+  error?: string;
+}
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  signInWithGoogle: () => Promise<void>;
-  signInWithEmail: (email: string) => Promise<{ ok: boolean; error?: string }>;
+  isConfigured: boolean;
+  signInWithGoogle: () => Promise<AuthResult>;
+  signInWithEmail: (email: string) => Promise<AuthResult>;
   signOut: () => Promise<void>;
 }
 
@@ -23,50 +29,66 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
       return;
     }
 
+    let isMounted = true;
+
     supabase.auth.getSession().then(({ data }) => {
-      setUser(data.session?.user ?? null);
-      setLoading(false);
+      if (isMounted) {
+        setUser(data.session?.user ?? null);
+        setLoading(false);
+      }
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(
       (_event: AuthChangeEvent, session: Session | null) => {
-        setUser(session?.user ?? null);
-        setLoading(false);
+        if (isMounted) {
+          setUser(session?.user ?? null);
+          setLoading(false);
+        }
       }
     );
 
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, []);
 
-  const signInWithGoogle = async () => {
-    if (!supabase) return;
-    await supabase.auth.signInWithOAuth({
+  const signInWithGoogle = async (): Promise<AuthResult> => {
+    if (!supabase) return { ok: false, error: 'Supabase not configured' };
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: window.location.origin,
       },
     });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true };
   };
 
-  const signInWithEmail = async (email: string) => {
+  const signInWithEmail = async (email: string): Promise<AuthResult> => {
     if (!supabase) return { ok: false, error: 'Supabase not configured' };
     const { error } = await supabase.auth.signInWithOtp({ email });
     if (error) return { ok: false, error: error.message };
     return { ok: true };
   };
 
-  const signOut = async () => {
+  const signOut = async (): Promise<void> => {
     if (!supabase) return;
     await supabase.auth.signOut();
   };
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, signInWithGoogle, signInWithEmail, signOut }}
+      value={{
+        user,
+        loading,
+        isConfigured: isSupabaseConfigured(),
+        signInWithGoogle,
+        signInWithEmail,
+        signOut,
+      }}
     >
       {children}
     </AuthContext.Provider>

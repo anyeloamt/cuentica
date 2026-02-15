@@ -93,7 +93,12 @@ export function BudgetTable({
             order: sortedOrders[index],
           }));
 
-          onReorderItems(reorderedUpdates);
+          (async () => {
+            const result = await onReorderItems(reorderedUpdates);
+            if (!result.ok) {
+              console.error('Failed to reorder items');
+            }
+          })();
         }
       }
     },

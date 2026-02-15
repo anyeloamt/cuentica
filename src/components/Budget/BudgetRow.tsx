@@ -143,7 +143,7 @@ function BudgetRowComponent({
       <div
         {...attributes}
         {...listeners}
-        className="w-8 h-8 flex items-center justify-center cursor-grab active:cursor-grabbing text-gray-400 hover:text-text-primary touch-none"
+        className="w-8 h-8 flex items-center justify-center cursor-grab active:cursor-grabbing text-gray-400 hover:text-text-primary touch-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:outline-none rounded"
         aria-label="Drag to reorder"
       >
         <svg

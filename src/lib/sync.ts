@@ -71,21 +71,19 @@ export async function syncPush(userId: string): Promise<void> {
 
   await db.transaction('rw', db.wallets, db.budgetItems, async () => {
     if (walletsWithId.length > 0) {
-      await db.wallets.bulkPut(
-        walletsWithId.map((wallet) => ({
-          ...wallet,
-          syncStatus: 'synced',
-        }))
-      );
+      const walletIds = walletsWithId.map((wallet) => wallet.id);
+      await db.wallets
+        .where('id')
+        .anyOf(walletIds)
+        .modify({ syncStatus: 'synced' as const });
     }
 
     if (budgetItemsWithId.length > 0) {
-      await db.budgetItems.bulkPut(
-        budgetItemsWithId.map((item) => ({
-          ...item,
-          syncStatus: 'synced',
-        }))
-      );
+      const budgetItemIds = budgetItemsWithId.map((item) => item.id);
+      await db.budgetItems
+        .where('id')
+        .anyOf(budgetItemIds)
+        .modify({ syncStatus: 'synced' as const });
     }
   });
 }

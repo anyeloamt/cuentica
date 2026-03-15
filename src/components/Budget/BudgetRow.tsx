@@ -25,6 +25,7 @@ function BudgetRowComponent({
 
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const lastSentRef = useRef({ name: item.name, amount: item.amount });
+  const isFocusedRef = useRef(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
@@ -42,6 +43,10 @@ function BudgetRowComponent({
   // We check if values are different to avoid cursor jumping if possible,
   // though typically this runs when the DB actually updates.
   useEffect(() => {
+    if (isFocusedRef.current) {
+      return;
+    }
+
     if (item.name !== name) {
       setName(item.name);
     }
@@ -108,7 +113,13 @@ function BudgetRowComponent({
     }
   };
 
+  const handleFocus = () => {
+    isFocusedRef.current = true;
+  };
+
   const handleBlur = () => {
+    isFocusedRef.current = false;
+
     if (debounceTimer.current) {
       clearTimeout(debounceTimer.current);
       debounceTimer.current = undefined;
@@ -171,6 +182,7 @@ function BudgetRowComponent({
           type="text"
           value={name}
           onChange={handleNameChange}
+          onFocus={handleFocus}
           onBlur={handleBlur}
           placeholder="Item name"
           className="w-full bg-transparent border-none outline-none text-text-primary placeholder-gray-400"
@@ -197,6 +209,7 @@ function BudgetRowComponent({
           inputMode="decimal"
           value={amount}
           onChange={handleAmountChange}
+          onFocus={handleFocus}
           onBlur={handleBlur}
           placeholder="0"
           className="w-full bg-transparent border-none outline-none text-right text-text-primary placeholder-gray-400 font-mono"

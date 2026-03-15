@@ -95,6 +95,49 @@ describe('BudgetRow', () => {
     });
   });
 
+  it('does not overwrite local state from props while input is focused', () => {
+    const { rerender } = render(
+      <BudgetRow item={item} rowNumber={1} onUpdate={mockUpdate} onDelete={mockDelete} />
+    );
+    const input = screen.getByLabelText('Item name');
+
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value: 'New Name' } });
+
+    rerender(
+      <BudgetRow
+        item={{ ...item, name: 'Synced Name', updatedAt: 2 }}
+        rowNumber={1}
+        onUpdate={mockUpdate}
+        onDelete={mockDelete}
+      />
+    );
+
+    expect(screen.getByLabelText('Item name')).toHaveValue('New Name');
+  });
+
+  it('syncs local state from props after blur', () => {
+    const { rerender } = render(
+      <BudgetRow item={item} rowNumber={1} onUpdate={mockUpdate} onDelete={mockDelete} />
+    );
+    const input = screen.getByLabelText('Item name');
+
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value: 'Draft Name' } });
+    fireEvent.blur(input);
+
+    rerender(
+      <BudgetRow
+        item={{ ...item, name: 'Persisted Name', updatedAt: 2 }}
+        rowNumber={1}
+        onUpdate={mockUpdate}
+        onDelete={mockDelete}
+      />
+    );
+
+    expect(screen.getByLabelText('Item name')).toHaveValue('Persisted Name');
+  });
+
   it('deletes immediately without confirmation', () => {
     render(
       <BudgetRow item={item} rowNumber={1} onUpdate={mockUpdate} onDelete={mockDelete} />

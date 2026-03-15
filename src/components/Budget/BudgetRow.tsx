@@ -241,7 +241,7 @@ function BudgetRowComponent({
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
-              d="M12 4.5v15m7.5-7.5h-15"
+              d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12M19.5 18.75l-2.25 2.25m0 0-2.25-2.25m2.25 2.25V15"
             />
           </svg>
         </button>

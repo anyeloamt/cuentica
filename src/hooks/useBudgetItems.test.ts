@@ -217,6 +217,89 @@ describe('useBudgetItems', () => {
     });
   });
 
+  describe('insertItemBelow', () => {
+    it('inserts between two rows using midpoint order', async () => {
+      const walletId = 'w1';
+      mockGet.mockResolvedValue({
+        id: 'i1',
+        walletId,
+        order: 1000,
+        deleted: false,
+      });
+      mockSortBy.mockResolvedValue([{ id: 'i2', walletId, order: 3000, deleted: false }]);
+      mockAdd.mockResolvedValue('new-id-123');
+
+      const { result } = renderHook(() => useBudgetItems(walletId));
+      const insertResult = await result.current.insertItemBelow('i1');
+
+      expect(insertResult).toEqual({ ok: true, id: expect.any(String) });
+      expect(mockAdd).toHaveBeenCalledWith(
+        expect.objectContaining({
+          walletId,
+          order: 2000,
+          name: '',
+          type: '-',
+          amount: 0,
+          syncStatus: 'pending',
+          createdAt: expect.any(Number),
+          updatedAt: expect.any(Number),
+          id: expect.any(String),
+        })
+      );
+    });
+
+    it('inserts after last row with +1000 order spacing', async () => {
+      const walletId = 'w1';
+      mockGet.mockResolvedValue({
+        id: 'i2',
+        walletId,
+        order: 5000,
+        deleted: false,
+      });
+      mockSortBy.mockResolvedValue([]);
+      mockAdd.mockResolvedValue('new-id-456');
+
+      const { result } = renderHook(() => useBudgetItems(walletId));
+      const insertResult = await result.current.insertItemBelow('i2');
+
+      expect(insertResult).toEqual({ ok: true, id: expect.any(String) });
+      expect(mockAdd).toHaveBeenCalledWith(
+        expect.objectContaining({
+          walletId,
+          order: 6000,
+          name: '',
+          type: '-',
+          amount: 0,
+        })
+      );
+    });
+
+    it('returns not-found for non-existent item id', async () => {
+      const { result } = renderHook(() => useBudgetItems('w1'));
+      mockGet.mockResolvedValue(undefined);
+
+      const insertResult = await result.current.insertItemBelow('missing-id');
+
+      expect(insertResult).toEqual({ ok: false, error: 'not-found' });
+      expect(mockAdd).not.toHaveBeenCalled();
+    });
+
+    it('returns not-found for item from another wallet', async () => {
+      mockGet.mockResolvedValue({
+        id: 'i1',
+        walletId: 'other-wallet',
+        order: 1000,
+        deleted: false,
+      });
+
+      const { result } = renderHook(() => useBudgetItems('w1'));
+      const insertResult = await result.current.insertItemBelow('i1');
+
+      expect(insertResult).toEqual({ ok: false, error: 'not-found' });
+      expect(mockAdd).not.toHaveBeenCalled();
+    });
+  });
+
   describe('deleteItem', () => {
     it('soft-deletes item successfully', async () => {
       const walletId = 'w1';

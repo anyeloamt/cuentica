@@ -7,20 +7,25 @@ import {
   serializeItemsToHtmlTable,
   serializeItemsToTsv,
 } from '../lib/budgetClipboard';
-import type { BudgetItem, CopiedBudgetItem, PasteBudgetItemsResult } from '../types';
+import type {
+  AppendBudgetItemsResult,
+  BudgetItem,
+  CopiedBudgetItem,
+  PasteBudgetItemsResult,
+} from '../types';
 
 interface UseBudgetClipboardParams {
   walletId: string;
   items: BudgetItem[] | undefined;
   appendItemsFromPaste: (
     itemsToAppend: CopiedBudgetItem[]
-  ) => Promise<PasteBudgetItemsResult>;
+  ) => Promise<AppendBudgetItemsResult>;
 }
 
 interface UseBudgetClipboardResult {
   canCopy: boolean;
-  handleCopy: () => Promise<void>;
-  handlePaste: () => Promise<void>;
+  handleCopy: () => Promise<PasteBudgetItemsResult>;
+  handlePaste: () => Promise<PasteBudgetItemsResult>;
 }
 
 const normalizeItemsForCopy = (sourceItems: BudgetItem[]): CopiedBudgetItem[] =>
@@ -43,10 +48,10 @@ export function useBudgetClipboard({
   const { setCopiedBudgetItems, getCopiedBudgetItems } = useBudgetClipboardContext();
   const { showToast } = useToast();
 
-  const handleCopy = useCallback(async (): Promise<void> => {
+  const handleCopy = useCallback(async (): Promise<PasteBudgetItemsResult> => {
     if (!items || items.length === 0) {
       showToast({ type: 'error', message: 'No rows available to copy.' });
-      return;
+      return { ok: false, error: 'no-items' };
     }
 
     const normalizedItems = normalizeItemsForCopy(items);
@@ -62,7 +67,7 @@ export function useBudgetClipboard({
         type: 'info',
         message: `${normalizedItems.length} rows copied in-app. Browser clipboard is unavailable.`,
       });
-      return;
+      return { ok: false, error: 'clipboard-unavailable' };
     }
 
     try {
@@ -79,10 +84,11 @@ export function useBudgetClipboard({
           type: 'info',
           message: `${normalizedItems.length} rows copied in-app. Browser clipboard is unavailable.`,
         });
-        return;
+        return { ok: false, error: 'clipboard-unavailable' };
       }
 
       showToast({ type: 'success', message: `${normalizedItems.length} rows copied.` });
+      return { ok: true, insertedCount: normalizedItems.length };
     } catch (error) {
       console.error('Failed to copy budget items to clipboard:', error);
 
@@ -93,7 +99,7 @@ export function useBudgetClipboard({
             type: 'success',
             message: `${normalizedItems.length} rows copied (text fallback).`,
           });
-          return;
+          return { ok: true, insertedCount: normalizedItems.length };
         } catch (fallbackError) {
           console.error(
             'Failed to copy budget items with writeText fallback:',
@@ -106,20 +112,22 @@ export function useBudgetClipboard({
         type: 'error',
         message: 'Unable to copy to clipboard. You can still paste in-app.',
       });
+      return { ok: false, error: 'clipboard-read-failed' };
     }
   }, [items, setCopiedBudgetItems, showToast, walletId]);
 
-  const handlePaste = useCallback(async (): Promise<void> => {
+  const handlePaste = useCallback(async (): Promise<PasteBudgetItemsResult> => {
     const inAppPayload = getCopiedBudgetItems();
 
     if (inAppPayload && inAppPayload.items.length > 0) {
       const result = await appendItemsFromPaste(inAppPayload.items);
       if (result.ok) {
         showToast({ type: 'success', message: `${result.insertedCount} rows pasted.` });
+        return result;
       } else {
         showToast({ type: 'error', message: 'Unable to paste rows into this wallet.' });
+        return result;
       }
-      return;
     }
 
     if (!navigator.clipboard || !navigator.clipboard.readText) {
@@ -127,7 +135,7 @@ export function useBudgetClipboard({
         type: 'error',
         message: 'Clipboard read is not supported in this browser.',
       });
-      return;
+      return { ok: false, error: 'clipboard-unavailable' };
     }
 
     try {
@@ -139,14 +147,16 @@ export function useBudgetClipboard({
           type: 'error',
           message: 'Clipboard content has no valid budget rows.',
         });
-        return;
+        return { ok: false, error: 'parse-failed' };
       }
 
       const result = await appendItemsFromPaste(parsed.items);
       if (result.ok) {
         showToast({ type: 'success', message: `${result.insertedCount} rows pasted.` });
+        return result;
       } else {
         showToast({ type: 'error', message: 'Unable to paste rows into this wallet.' });
+        return result;
       }
     } catch (error) {
       console.error('Failed to paste budget items from clipboard:', error);
@@ -154,6 +164,7 @@ export function useBudgetClipboard({
         type: 'error',
         message: 'Unable to read clipboard. Try copy first and then paste.',
       });
+      return { ok: false, error: 'clipboard-read-failed' };
     }
   }, [appendItemsFromPaste, getCopiedBudgetItems, showToast]);
 

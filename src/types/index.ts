@@ -24,6 +24,7 @@ export interface BudgetItem extends SyncableEntity {
 }
 
 export type {
+  AppendBudgetItemsResult,
   CopiedBudgetItem,
   CopiedBudgetItemsPayload,
   ParseBudgetItemsError,

@@ -18,6 +18,10 @@ export type ParseBudgetItemsResult =
   | { ok: true; items: CopiedBudgetItem[] }
   | { ok: false; error: ParseBudgetItemsError };
 
+export type AppendBudgetItemsResult =
+  | { ok: true; insertedCount: number }
+  | { ok: false; error: 'no-items' | 'db-error' };
+
 export type PasteBudgetItemsResult =
   | { ok: true; insertedCount: number }
   | {

@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 
 import { db } from '../lib/db';
-import type { BudgetItem, CopiedBudgetItem, PasteBudgetItemsResult } from '../types';
+import type { AppendBudgetItemsResult, BudgetItem, CopiedBudgetItem } from '../types';
 
 export function useBudgetItems(walletId: string) {
   const items = useLiveQuery(
@@ -87,7 +87,7 @@ export function useBudgetItems(walletId: string) {
 
   const appendItemsFromPaste = async (
     itemsToAppend: CopiedBudgetItem[]
-  ): Promise<PasteBudgetItemsResult> => {
+  ): Promise<AppendBudgetItemsResult> => {
     if (itemsToAppend.length === 0) {
       return { ok: false, error: 'no-items' };
     }

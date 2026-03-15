@@ -71,19 +71,33 @@ export async function syncPush(userId: string): Promise<void> {
 
   await db.transaction('rw', db.wallets, db.budgetItems, async () => {
     if (walletsWithId.length > 0) {
+      const walletTimestamps = new Map(
+        walletsWithId.map((wallet) => [wallet.id, wallet.updatedAt])
+      );
       const walletIds = walletsWithId.map((wallet) => wallet.id);
       await db.wallets
         .where('id')
         .anyOf(walletIds)
-        .modify({ syncStatus: 'synced' as const });
+        .modify((wallet, ref) => {
+          if (wallet.updatedAt === walletTimestamps.get(wallet.id!)) {
+            ref.value.syncStatus = 'synced';
+          }
+        });
     }
 
     if (budgetItemsWithId.length > 0) {
+      const itemTimestamps = new Map(
+        budgetItemsWithId.map((item) => [item.id, item.updatedAt])
+      );
       const budgetItemIds = budgetItemsWithId.map((item) => item.id);
       await db.budgetItems
         .where('id')
         .anyOf(budgetItemIds)
-        .modify({ syncStatus: 'synced' as const });
+        .modify((item, ref) => {
+          if (item.updatedAt === itemTimestamps.get(item.id!)) {
+            ref.value.syncStatus = 'synced';
+          }
+        });
     }
   });
 }

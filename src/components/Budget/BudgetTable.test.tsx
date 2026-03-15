@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { BudgetItem } from '../../types';
@@ -10,6 +10,7 @@ describe('BudgetTable', () => {
   const mockTrimRows = vi.fn();
   const mockUpdateItem = vi.fn();
   const mockDeleteItem = vi.fn().mockResolvedValue({ ok: true });
+  const mockInsertBelow = vi.fn().mockResolvedValue({ ok: true, id: 'inserted-id' });
   const mockReorderItems = vi.fn().mockResolvedValue({ ok: true });
 
   const items: BudgetItem[] = [
@@ -43,6 +44,7 @@ describe('BudgetTable', () => {
         onTrimRows={mockTrimRows}
         onUpdateItem={mockUpdateItem}
         onDeleteItem={mockDeleteItem}
+        onInsertBelow={mockInsertBelow}
         onReorderItems={mockReorderItems}
       />
     );
@@ -57,6 +59,7 @@ describe('BudgetTable', () => {
         onTrimRows={mockTrimRows}
         onUpdateItem={mockUpdateItem}
         onDeleteItem={mockDeleteItem}
+        onInsertBelow={mockInsertBelow}
         onReorderItems={mockReorderItems}
       />
     );
@@ -71,6 +74,7 @@ describe('BudgetTable', () => {
         onTrimRows={mockTrimRows}
         onUpdateItem={mockUpdateItem}
         onDeleteItem={mockDeleteItem}
+        onInsertBelow={mockInsertBelow}
         onReorderItems={mockReorderItems}
       />
     );
@@ -94,6 +98,7 @@ describe('BudgetTable', () => {
         onTrimRows={mockTrimRows}
         onUpdateItem={mockUpdateItem}
         onDeleteItem={mockDeleteItem}
+        onInsertBelow={mockInsertBelow}
         onReorderItems={mockReorderItems}
       />
     );
@@ -123,6 +128,7 @@ describe('BudgetTable', () => {
         onTrimRows={mockTrimRows}
         onUpdateItem={mockUpdateItem}
         onDeleteItem={mockDeleteItem}
+        onInsertBelow={mockInsertBelow}
         onReorderItems={mockReorderItems}
       />
     );
@@ -131,5 +137,52 @@ describe('BudgetTable', () => {
     // Use getAllByText because "-100.00" appears twice (Expenses and Total)
     const negativeValues = screen.getAllByText('-100.00');
     expect(negativeValues).toHaveLength(2);
+  });
+
+  it('autofocuses the row matching inserted id after insert-below succeeds', async () => {
+    const focusedInsertId = 'inserted-row-id';
+    mockInsertBelow.mockResolvedValueOnce({ ok: true, id: focusedInsertId });
+
+    const itemsWithInsertedTarget: BudgetItem[] = [
+      {
+        id: 'source-row-id',
+        walletId: 'w1',
+        order: 1000,
+        name: 'Source row',
+        type: '-',
+        amount: 100,
+        createdAt: 1,
+        updatedAt: 1,
+      },
+      {
+        id: focusedInsertId,
+        walletId: 'w1',
+        order: 2000,
+        name: 'Inserted target',
+        type: '-',
+        amount: 0,
+        createdAt: 2,
+        updatedAt: 2,
+      },
+    ];
+
+    render(
+      <BudgetTable
+        items={itemsWithInsertedTarget}
+        onAddItems={mockAddItems}
+        onTrimRows={mockTrimRows}
+        onUpdateItem={mockUpdateItem}
+        onDeleteItem={mockDeleteItem}
+        onInsertBelow={mockInsertBelow}
+        onReorderItems={mockReorderItems}
+      />
+    );
+
+    const insertButtons = screen.getAllByLabelText('Insert item below');
+    fireEvent.click(insertButtons[0]);
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('Inserted target')).toHaveFocus();
+    });
   });
 });

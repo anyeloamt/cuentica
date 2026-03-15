@@ -24,6 +24,7 @@ import { BudgetRow } from './BudgetRow';
 
 type AddItemsResult = { ok: true; ids: string[] } | { ok: false; error: string };
 type TrimResult = { ok: true; count: number } | { ok: false; error: string };
+type InsertBelowResult = { ok: true; id: string } | { ok: false; error: string };
 
 interface BudgetTableProps {
   items: BudgetItem[] | undefined;
@@ -31,6 +32,7 @@ interface BudgetTableProps {
   onTrimRows: () => Promise<TrimResult>;
   onUpdateItem: (id: string, changes: Partial<BudgetItem>) => void;
   onDeleteItem: (id: string) => Promise<{ ok: boolean }>;
+  onInsertBelow: (id: string) => Promise<InsertBelowResult>;
   onRestoreItem?: (item: BudgetItem) => Promise<{ ok: boolean }>;
   onReorderItems: (updates: { id: string; order: number }[]) => Promise<{ ok: boolean }>;
 }
@@ -41,6 +43,7 @@ export function BudgetTable({
   onTrimRows,
   onUpdateItem,
   onDeleteItem,
+  onInsertBelow,
   onRestoreItem,
   onReorderItems,
 }: BudgetTableProps) {
@@ -131,6 +134,16 @@ export function BudgetTable({
     [items, onDeleteItem]
   );
 
+  const handleInsertBelow = useCallback(
+    async (id: string) => {
+      const result = await onInsertBelow(id);
+      if (result.ok) {
+        setLastAddedId(result.id);
+      }
+    },
+    [onInsertBelow]
+  );
+
   const handleUndo = useCallback(async () => {
     if (deletedItems.length === 0 || !onRestoreItem) {
       return;
@@ -189,7 +202,7 @@ export function BudgetTable({
         ) : (
           <div className="flex flex-col">
             <div className="flex px-2 py-1.5 text-xs font-semibold text-text-secondary uppercase tracking-wider border-b border-border">
-              <div className="w-8"></div>
+              <div className="w-16"></div>
               <div className="w-6 text-center flex-shrink-0">#</div>
               <div className="flex-grow pl-2">Name</div>
               <div className="w-8 text-center">Type</div>
@@ -213,6 +226,9 @@ export function BudgetTable({
                     rowNumber={index + 1}
                     onUpdate={onUpdateItem}
                     onDelete={handleDeleteWithUndo}
+                    onInsertBelow={(id) => {
+                      void handleInsertBelow(id);
+                    }}
                     // eslint-disable-next-line jsx-a11y/no-autofocus
                     autoFocus={item.id === lastAddedId}
                   />

@@ -8,6 +8,7 @@ import { BudgetRow } from './BudgetRow';
 describe('BudgetRow', () => {
   const mockUpdate = vi.fn();
   const mockDelete = vi.fn();
+  const mockInsertBelow = vi.fn();
   const item: BudgetItem = {
     id: 'i1',
     walletId: 'w1',
@@ -23,6 +24,7 @@ describe('BudgetRow', () => {
     vi.useFakeTimers();
     mockUpdate.mockClear();
     mockDelete.mockClear();
+    mockInsertBelow.mockClear();
   });
 
   afterEach(() => {
@@ -146,5 +148,28 @@ describe('BudgetRow', () => {
     fireEvent.click(deleteBtn);
 
     expect(mockDelete).toHaveBeenCalledWith('i1');
+  });
+
+  it('renders insert-below button and calls callback with item id', () => {
+    render(
+      <BudgetRow
+        item={item}
+        rowNumber={1}
+        onUpdate={mockUpdate}
+        onDelete={mockDelete}
+        onInsertBelow={mockInsertBelow}
+      />
+    );
+
+    fireEvent.click(screen.getByLabelText('Insert item below'));
+    expect(mockInsertBelow).toHaveBeenCalledWith('i1');
+  });
+
+  it('does not render insert-below button when callback is not provided', () => {
+    render(
+      <BudgetRow item={item} rowNumber={1} onUpdate={mockUpdate} onDelete={mockDelete} />
+    );
+
+    expect(screen.queryByLabelText('Insert item below')).not.toBeInTheDocument();
   });
 });

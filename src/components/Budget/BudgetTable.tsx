@@ -17,6 +17,7 @@ import {
 } from '@dnd-kit/sortable';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 
+import { useToast } from '../../context/ToastContext';
 import type { BudgetItem } from '../../types';
 import { formatAmount } from '../../lib/format';
 
@@ -24,6 +25,7 @@ import { BudgetRow } from './BudgetRow';
 
 type AddItemsResult = { ok: true; ids: string[] } | { ok: false; error: string };
 type TrimResult = { ok: true; count: number } | { ok: false; error: string };
+type InsertBelowResult = { ok: true; id: string } | { ok: false; error: string };
 
 interface BudgetTableProps {
   items: BudgetItem[] | undefined;
@@ -31,6 +33,7 @@ interface BudgetTableProps {
   onTrimRows: () => Promise<TrimResult>;
   onUpdateItem: (id: string, changes: Partial<BudgetItem>) => void;
   onDeleteItem: (id: string) => Promise<{ ok: boolean }>;
+  onInsertBelow: (id: string) => Promise<InsertBelowResult>;
   onRestoreItem?: (item: BudgetItem) => Promise<{ ok: boolean }>;
   onReorderItems: (updates: { id: string; order: number }[]) => Promise<{ ok: boolean }>;
 }
@@ -41,11 +44,13 @@ export function BudgetTable({
   onTrimRows,
   onUpdateItem,
   onDeleteItem,
+  onInsertBelow,
   onRestoreItem,
   onReorderItems,
 }: BudgetTableProps) {
   const [deletedItems, setDeletedItems] = useState<BudgetItem[]>([]);
   const [lastAddedId, setLastAddedId] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   const sensors = useSensors(
     useSensor(MouseSensor, {
@@ -131,6 +136,19 @@ export function BudgetTable({
     [items, onDeleteItem]
   );
 
+  const handleInsertBelow = useCallback(
+    async (id: string) => {
+      const result = await onInsertBelow(id);
+      if (result.ok) {
+        setLastAddedId(result.id);
+        return;
+      }
+
+      showToast({ type: 'error', message: 'Failed to insert row' });
+    },
+    [onInsertBelow, showToast]
+  );
+
   const handleUndo = useCallback(async () => {
     if (deletedItems.length === 0 || !onRestoreItem) {
       return;
@@ -194,7 +212,7 @@ export function BudgetTable({
               <div className="flex-grow pl-2">Name</div>
               <div className="w-8 text-center">Type</div>
               <div className="w-20 sm:w-24 text-right">Amount</div>
-              <div className="w-8"></div>
+              <div className="w-16"></div>
             </div>
             <DndContext
               sensors={sensors}
@@ -213,6 +231,9 @@ export function BudgetTable({
                     rowNumber={index + 1}
                     onUpdate={onUpdateItem}
                     onDelete={handleDeleteWithUndo}
+                    onInsertBelow={(id) => {
+                      void handleInsertBelow(id);
+                    }}
                     // eslint-disable-next-line jsx-a11y/no-autofocus
                     autoFocus={item.id === lastAddedId}
                   />

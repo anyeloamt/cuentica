@@ -20,6 +20,7 @@ export function WalletDetailPage(): JSX.Element {
   const {
     items,
     addItems,
+    insertItemBelow,
     appendItemsFromPaste,
     trimEmptyRows,
     updateItem,
@@ -161,6 +162,7 @@ export function WalletDetailPage(): JSX.Element {
         onTrimRows={trimEmptyRows}
         onUpdateItem={updateItem}
         onDeleteItem={deleteItem}
+        onInsertBelow={insertItemBelow}
         onRestoreItem={restoreItem}
         onReorderItems={reorderBudgetItems}
       />

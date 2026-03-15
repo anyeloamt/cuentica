@@ -1,9 +1,17 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { BudgetItem } from '../../types';
 
 import { BudgetTable } from './BudgetTable';
+
+const showToast = vi.fn();
+
+vi.mock('../../context/ToastContext', () => ({
+  useToast: () => ({
+    showToast,
+  }),
+}));
 
 describe('BudgetTable', () => {
   const mockAddItems = vi.fn().mockResolvedValue({ ok: true, ids: [] });
@@ -12,6 +20,12 @@ describe('BudgetTable', () => {
   const mockDeleteItem = vi.fn().mockResolvedValue({ ok: true });
   const mockInsertBelow = vi.fn().mockResolvedValue({ ok: true, id: 'inserted-id' });
   const mockReorderItems = vi.fn().mockResolvedValue({ ok: true });
+
+  beforeEach(() => {
+    showToast.mockReset();
+    mockInsertBelow.mockReset();
+    mockInsertBelow.mockResolvedValue({ ok: true, id: 'inserted-id' });
+  });
 
   const items: BudgetItem[] = [
     {
@@ -183,6 +197,31 @@ describe('BudgetTable', () => {
 
     await waitFor(() => {
       expect(screen.getByDisplayValue('Inserted target')).toHaveFocus();
+    });
+  });
+
+  it('shows error toast when insert-below fails', async () => {
+    mockInsertBelow.mockResolvedValueOnce({ ok: false, error: 'db-error' });
+
+    render(
+      <BudgetTable
+        items={items}
+        onAddItems={mockAddItems}
+        onTrimRows={mockTrimRows}
+        onUpdateItem={mockUpdateItem}
+        onDeleteItem={mockDeleteItem}
+        onInsertBelow={mockInsertBelow}
+        onReorderItems={mockReorderItems}
+      />
+    );
+
+    fireEvent.click(screen.getAllByLabelText('Insert item below')[0]);
+
+    await waitFor(() => {
+      expect(showToast).toHaveBeenCalledWith({
+        type: 'error',
+        message: 'Failed to insert row',
+      });
     });
   });
 });

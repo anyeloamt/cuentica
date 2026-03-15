@@ -90,38 +90,47 @@ export function useBudgetItems(walletId: string) {
     currentItemId: string
   ): Promise<{ ok: true; id: string } | { ok: false; error: string }> => {
     try {
-      const currentItem = await db.budgetItems.get(currentItemId);
-
-      if (!currentItem || currentItem.walletId !== walletId || currentItem.deleted) {
-        return { ok: false, error: 'not-found' };
-      }
-
-      const nextItem = await db.budgetItems
-        .where('walletId')
-        .equals(walletId)
-        .filter((item) => !item.deleted && item.order > currentItem.order)
-        .sortBy('order')
-        .then((walletItems) => walletItems[0]);
-
-      const newOrder = nextItem
-        ? (currentItem.order + nextItem.order) / 2
-        : currentItem.order + 1000;
-
-      const newItemId = crypto.randomUUID();
-      const newItem: BudgetItem = {
-        id: newItemId,
-        walletId,
-        order: newOrder,
-        name: '',
-        type: '-',
-        amount: 0,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        syncStatus: 'pending',
+      let result: { ok: true; id: string } | { ok: false; error: string } = {
+        ok: false,
+        error: 'not-found',
       };
 
-      await db.budgetItems.add(newItem);
-      return { ok: true, id: newItemId };
+      await db.transaction('rw', db.budgetItems, async () => {
+        const currentItem = await db.budgetItems.get(currentItemId);
+
+        if (!currentItem || currentItem.walletId !== walletId || currentItem.deleted) {
+          return;
+        }
+
+        const nextItem = await db.budgetItems
+          .where('walletId')
+          .equals(walletId)
+          .filter((item) => !item.deleted && item.order > currentItem.order)
+          .sortBy('order')
+          .then((walletItems) => walletItems[0]);
+
+        const newOrder = nextItem
+          ? (currentItem.order + nextItem.order) / 2
+          : currentItem.order + 1000;
+
+        const newItemId = crypto.randomUUID();
+        const newItem: BudgetItem = {
+          id: newItemId,
+          walletId,
+          order: newOrder,
+          name: '',
+          type: '-',
+          amount: 0,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          syncStatus: 'pending',
+        };
+
+        await db.budgetItems.add(newItem);
+        result = { ok: true, id: newItemId };
+      });
+
+      return result;
     } catch (error) {
       console.error('Failed to insert budget item below:', error);
       return { ok: false, error: 'db-error' };

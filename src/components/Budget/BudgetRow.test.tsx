@@ -164,4 +164,12 @@ describe('BudgetRow', () => {
     fireEvent.click(screen.getByLabelText('Insert item below'));
     expect(mockInsertBelow).toHaveBeenCalledWith('i1');
   });
+
+  it('does not render insert-below button when callback is not provided', () => {
+    render(
+      <BudgetRow item={item} rowNumber={1} onUpdate={mockUpdate} onDelete={mockDelete} />
+    );
+
+    expect(screen.queryByLabelText('Insert item below')).not.toBeInTheDocument();
+  });
 });

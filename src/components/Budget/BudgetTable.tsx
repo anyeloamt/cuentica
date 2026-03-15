@@ -17,6 +17,7 @@ import {
 } from '@dnd-kit/sortable';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 
+import { useToast } from '../../context/ToastContext';
 import type { BudgetItem } from '../../types';
 import { formatAmount } from '../../lib/format';
 
@@ -49,6 +50,7 @@ export function BudgetTable({
 }: BudgetTableProps) {
   const [deletedItems, setDeletedItems] = useState<BudgetItem[]>([]);
   const [lastAddedId, setLastAddedId] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   const sensors = useSensors(
     useSensor(MouseSensor, {
@@ -139,9 +141,12 @@ export function BudgetTable({
       const result = await onInsertBelow(id);
       if (result.ok) {
         setLastAddedId(result.id);
+        return;
       }
+
+      showToast({ type: 'error', message: 'Failed to insert row' });
     },
-    [onInsertBelow]
+    [onInsertBelow, showToast]
   );
 
   const handleUndo = useCallback(async () => {
@@ -202,12 +207,12 @@ export function BudgetTable({
         ) : (
           <div className="flex flex-col">
             <div className="flex px-2 py-1.5 text-xs font-semibold text-text-secondary uppercase tracking-wider border-b border-border">
-              <div className="w-16"></div>
+              <div className="w-8"></div>
               <div className="w-6 text-center flex-shrink-0">#</div>
               <div className="flex-grow pl-2">Name</div>
               <div className="w-8 text-center">Type</div>
               <div className="w-20 sm:w-24 text-right">Amount</div>
-              <div className="w-8"></div>
+              <div className="w-16"></div>
             </div>
             <DndContext
               sensors={sensors}

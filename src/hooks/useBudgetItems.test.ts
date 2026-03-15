@@ -298,6 +298,21 @@ describe('useBudgetItems', () => {
       expect(insertResult).toEqual({ ok: false, error: 'not-found' });
       expect(mockAdd).not.toHaveBeenCalled();
     });
+
+    it('returns not-found when source item is deleted', async () => {
+      mockGet.mockResolvedValue({
+        id: 'i1',
+        walletId: 'w1',
+        order: 1000,
+        deleted: true,
+      });
+
+      const { result } = renderHook(() => useBudgetItems('w1'));
+      const insertResult = await result.current.insertItemBelow('i1');
+
+      expect(insertResult).toEqual({ ok: false, error: 'not-found' });
+      expect(mockAdd).not.toHaveBeenCalled();
+    });
   });
 
   describe('deleteItem', () => {

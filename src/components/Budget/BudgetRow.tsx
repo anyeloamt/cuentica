@@ -224,27 +224,29 @@ function BudgetRowComponent({
       </div>
 
       <div className="flex w-16 items-center justify-end gap-1">
-        <button
-          type="button"
-          onClick={handleInsertBelow}
-          className="flex h-8 w-8 items-center justify-center rounded-full text-text-secondary hover:bg-blue-50 hover:text-blue-500 transition-all"
-          aria-label="Insert item below"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={1.5}
-            stroke="currentColor"
-            className="h-[18px] w-[18px]"
+        {onInsertBelow ? (
+          <button
+            type="button"
+            onClick={handleInsertBelow}
+            className="flex h-8 w-8 items-center justify-center rounded-full text-text-secondary hover:bg-blue-50 hover:text-blue-500 transition-all"
+            aria-label="Insert item below"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12M19.5 18.75l-2.25 2.25m0 0-2.25-2.25m2.25 2.25V15"
-            />
-          </svg>
-        </button>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+              className="h-[18px] w-[18px]"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12M19.5 18.75l-2.25 2.25m0 0-2.25-2.25m2.25 2.25V15"
+              />
+            </svg>
+          </button>
+        ) : null}
 
         <button
           type="button"

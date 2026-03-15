@@ -20,6 +20,9 @@ const toRow = (item: CopiedBudgetItem): string[] => [
 
 const isItemType = (value: string): value is '+' | '-' => value === '+' || value === '-';
 
+/**
+ * Serializes copied budget items into a tab-separated plain-text payload.
+ */
 export function serializeItemsToTsv(items: CopiedBudgetItem[]): string {
   return items
     .map((item) =>
@@ -30,6 +33,9 @@ export function serializeItemsToTsv(items: CopiedBudgetItem[]): string {
     .join('\n');
 }
 
+/**
+ * Serializes copied budget items into an HTML table clipboard payload.
+ */
 export function serializeItemsToHtmlTable(items: CopiedBudgetItem[]): string {
   const rows = items
     .map((item) => {
@@ -41,6 +47,9 @@ export function serializeItemsToHtmlTable(items: CopiedBudgetItem[]): string {
   return `<table><thead><tr><th>Name</th><th>Type</th><th>Amount</th><th>Category</th><th>Date</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 
+/**
+ * Parses budget rows from plain-text clipboard content.
+ */
 export function parseItemsFromPlainText(text: string): ParseBudgetItemsResult {
   const normalizedText = text.trim();
   if (normalizedText.length === 0) {

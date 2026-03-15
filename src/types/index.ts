@@ -28,6 +28,5 @@ export type {
   CopiedBudgetItemsPayload,
   ParseBudgetItemsError,
   ParseBudgetItemsResult,
-  CopyBudgetItemsResult,
   PasteBudgetItemsResult,
 } from './clipboard';

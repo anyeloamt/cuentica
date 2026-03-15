@@ -18,6 +18,9 @@ const BudgetClipboardContext = createContext<BudgetClipboardContextType | undefi
   undefined
 );
 
+/**
+ * Provides in-memory budget clipboard state shared across app screens.
+ */
 export function BudgetClipboardProvider({
   children,
 }: {
@@ -58,6 +61,9 @@ export function BudgetClipboardProvider({
   );
 }
 
+/**
+ * Returns budget clipboard state/actions from the nearest provider.
+ */
 export function useBudgetClipboard(): BudgetClipboardContextType {
   const context = useContext(BudgetClipboardContext);
 

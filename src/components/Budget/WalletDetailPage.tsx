@@ -1,18 +1,11 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 
-import { useBudgetClipboard } from '../../context/BudgetClipboardContext';
-import { useToast } from '../../context/ToastContext';
+import { useBudgetClipboard } from '../../hooks/useBudgetClipboard';
 import { useBudgetItems } from '../../hooks/useBudgetItems';
 import { useWalletName } from '../../hooks/useWalletName';
-import {
-  parseItemsFromPlainText,
-  serializeItemsToHtmlTable,
-  serializeItemsToTsv,
-} from '../../lib/budgetClipboard';
 import { generatePdf } from '../../lib/pdf';
 import { sharePdf } from '../../lib/share';
-import type { CopiedBudgetItem } from '../../types';
 
 import { BudgetTable } from './BudgetTable';
 
@@ -34,136 +27,16 @@ export function WalletDetailPage(): JSX.Element {
     restoreItem,
     reorderBudgetItems,
   } = useBudgetItems(walletId);
-  const { setCopiedBudgetItems, getCopiedBudgetItems } = useBudgetClipboard();
-  const { showToast } = useToast();
+  const { canCopy, handleCopy, handlePaste } = useBudgetClipboard({
+    walletId,
+    items,
+    appendItemsFromPaste,
+  });
 
   const [exporting, setExporting] = useState(false);
 
   const hasExportableItems =
     items !== undefined && items.some((i) => i.name.trim() !== '' || i.amount !== 0);
-
-  const normalizeItemsForCopy = (sourceItems: CopiedBudgetItem[]): CopiedBudgetItem[] =>
-    sourceItems.map((item) => ({
-      name: item.name,
-      type: item.type,
-      amount: item.amount,
-      categoryTag: item.categoryTag,
-      date: item.date,
-    }));
-
-  const handleCopyItems = async (): Promise<void> => {
-    if (!items || items.length === 0) {
-      showToast({ type: 'error', message: 'No rows available to copy.' });
-      return;
-    }
-
-    const normalizedItems = normalizeItemsForCopy(items);
-    setCopiedBudgetItems({ sourceWalletId: walletId, items: normalizedItems });
-
-    const tsv = serializeItemsToTsv(normalizedItems);
-    const htmlTable = serializeItemsToHtmlTable(normalizedItems);
-    const plainBlob = new Blob([tsv], { type: 'text/plain' });
-    const htmlBlob = new Blob([htmlTable], { type: 'text/html' });
-
-    if (!navigator.clipboard) {
-      showToast({
-        type: 'info',
-        message: `${normalizedItems.length} rows copied in-app. Browser clipboard is unavailable.`,
-      });
-      return;
-    }
-
-    try {
-      if (typeof ClipboardItem !== 'undefined' && navigator.clipboard.write) {
-        const clipboardItem = new ClipboardItem({
-          'text/plain': plainBlob,
-          'text/html': htmlBlob,
-        });
-        await navigator.clipboard.write([clipboardItem]);
-      } else if (navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(tsv);
-      } else {
-        showToast({
-          type: 'info',
-          message: `${normalizedItems.length} rows copied in-app. Browser clipboard is unavailable.`,
-        });
-        return;
-      }
-
-      showToast({ type: 'success', message: `${normalizedItems.length} rows copied.` });
-    } catch (error) {
-      console.error('Failed to copy budget items to clipboard:', error);
-
-      if (navigator.clipboard.writeText) {
-        try {
-          await navigator.clipboard.writeText(tsv);
-          showToast({
-            type: 'success',
-            message: `${normalizedItems.length} rows copied (text fallback).`,
-          });
-          return;
-        } catch (fallbackError) {
-          console.error(
-            'Failed to copy budget items with writeText fallback:',
-            fallbackError
-          );
-        }
-      }
-
-      showToast({
-        type: 'error',
-        message: 'Unable to copy to clipboard. You can still paste in-app.',
-      });
-    }
-  };
-
-  const handlePasteItems = async (): Promise<void> => {
-    const inAppPayload = getCopiedBudgetItems();
-
-    if (inAppPayload && inAppPayload.items.length > 0) {
-      const result = await appendItemsFromPaste(inAppPayload.items);
-      if (result.ok) {
-        showToast({ type: 'success', message: `${result.insertedCount} rows pasted.` });
-      } else {
-        showToast({ type: 'error', message: 'Unable to paste rows into this wallet.' });
-      }
-      return;
-    }
-
-    if (!navigator.clipboard || !navigator.clipboard.readText) {
-      showToast({
-        type: 'error',
-        message: 'Clipboard read is not supported in this browser.',
-      });
-      return;
-    }
-
-    try {
-      const clipboardText = await navigator.clipboard.readText();
-      const parsed = parseItemsFromPlainText(clipboardText);
-
-      if (!parsed.ok) {
-        showToast({
-          type: 'error',
-          message: 'Clipboard content has no valid budget rows.',
-        });
-        return;
-      }
-
-      const result = await appendItemsFromPaste(parsed.items);
-      if (result.ok) {
-        showToast({ type: 'success', message: `${result.insertedCount} rows pasted.` });
-      } else {
-        showToast({ type: 'error', message: 'Unable to paste rows into this wallet.' });
-      }
-    } catch (error) {
-      console.error('Failed to paste budget items from clipboard:', error);
-      showToast({
-        type: 'error',
-        message: 'Unable to read clipboard. Try copy first and then paste.',
-      });
-    }
-  };
 
   const handleExport = async () => {
     if (!items || !hasExportableItems) return;
@@ -184,9 +57,9 @@ export function WalletDetailPage(): JSX.Element {
         <button
           type="button"
           onClick={() => {
-            void handleCopyItems();
+            void handleCopy();
           }}
-          disabled={!items || items.length === 0}
+          disabled={!canCopy}
           className={actionButtonClassName}
           aria-label="Copy items"
           title="Copy items"
@@ -210,7 +83,7 @@ export function WalletDetailPage(): JSX.Element {
         <button
           type="button"
           onClick={() => {
-            void handlePasteItems();
+            void handlePaste();
           }}
           className={actionButtonClassName}
           aria-label="Paste items"

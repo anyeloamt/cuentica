@@ -185,7 +185,13 @@ describe('WalletDetailPage', () => {
     const showToast = vi.fn();
     const budgetItemsValue = createBudgetItemsHookValue();
 
-    vi.stubGlobal('navigator', Object.assign(Object.create(window.navigator), {}));
+    Object.defineProperty(window.navigator, 'clipboard', {
+      value: {
+        write: mockWrite,
+        writeText: mockWriteText,
+      },
+      configurable: true,
+    });
     useToastMock.mockReturnValue({ showToast });
     useBudgetItemsMock.mockReturnValue({
       ...budgetItemsValue,
@@ -198,7 +204,7 @@ describe('WalletDetailPage', () => {
     await waitFor(() => {
       expect(showToast).toHaveBeenCalledWith({
         type: 'error',
-        message: 'Clipboard content has no valid budget rows.',
+        message: 'Clipboard read is not supported in this browser.',
       });
     });
   });

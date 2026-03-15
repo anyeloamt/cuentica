@@ -12,18 +12,11 @@ export interface CopiedBudgetItemsPayload {
   items: CopiedBudgetItem[];
 }
 
-export type ParseBudgetItemsError = 'empty-input' | 'invalid-format' | 'no-valid-items';
+export type ParseBudgetItemsError = 'empty-input' | 'no-valid-items';
 
 export type ParseBudgetItemsResult =
   | { ok: true; items: CopiedBudgetItem[] }
   | { ok: false; error: ParseBudgetItemsError };
-
-export type CopyBudgetItemsResult =
-  | { ok: true; copiedCount: number }
-  | {
-      ok: false;
-      error: 'no-items' | 'clipboard-unavailable' | 'clipboard-write-failed';
-    };
 
 export type PasteBudgetItemsResult =
   | { ok: true; insertedCount: number }

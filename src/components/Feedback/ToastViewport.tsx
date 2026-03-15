@@ -6,6 +6,9 @@ const toastStylesByType: Record<'success' | 'error' | 'info', string> = {
   info: 'border-slate-500/40 bg-slate-900/85 text-slate-100',
 };
 
+/**
+ * Renders the global toast stack in a fixed bottom viewport.
+ */
 export function ToastViewport(): JSX.Element | null {
   const { toasts, dismissToast } = useToast();
 

@@ -12,6 +12,7 @@ const mockBulkAdd = vi.fn();
 const mockUpdate = vi.fn();
 const mockDelete = vi.fn();
 const mockGet = vi.fn();
+const mockTransaction = vi.fn();
 
 vi.mock('dexie-react-hooks', () => ({
   useLiveQuery: (querier: () => unknown) => querier(),
@@ -19,6 +20,7 @@ vi.mock('dexie-react-hooks', () => ({
 
 vi.mock('../lib/db', () => ({
   db: {
+    transaction: (...args: unknown[]) => mockTransaction(...args),
     budgetItems: {
       where: (...args: unknown[]) => mockWhere(...args),
       add: (...args: unknown[]) => mockAdd(...args),
@@ -33,6 +35,10 @@ vi.mock('../lib/db', () => ({
 describe('useBudgetItems', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+
+    mockTransaction.mockImplementation(
+      async (_mode: string, _table: unknown, callback: () => Promise<void>) => callback()
+    );
 
     mockWhere.mockReturnValue({
       equals: mockEquals,

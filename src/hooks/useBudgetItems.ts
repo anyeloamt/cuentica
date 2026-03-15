@@ -93,37 +93,43 @@ export function useBudgetItems(walletId: string) {
     }
 
     try {
-      const lastItem = await db.budgetItems
-        .where('walletId')
-        .equals(walletId)
-        .filter((item) => !item.deleted)
-        .reverse()
-        .sortBy('order')
-        .then((items) => items[0]);
+      let insertedCount = 0;
 
-      let nextOrder = (lastItem?.order ?? 0) + 1000;
-      const timestamp = Date.now();
+      await db.transaction('rw', db.budgetItems, async () => {
+        const lastItem = await db.budgetItems
+          .where('walletId')
+          .equals(walletId)
+          .filter((item) => !item.deleted)
+          .reverse()
+          .sortBy('order')
+          .then((items) => items[0]);
 
-      const newItems: BudgetItem[] = itemsToAppend.map((item) => {
-        const newItem: BudgetItem = {
-          id: crypto.randomUUID(),
-          walletId,
-          order: nextOrder,
-          name: item.name,
-          type: item.type,
-          amount: item.amount,
-          categoryTag: item.categoryTag,
-          date: item.date,
-          createdAt: timestamp,
-          updatedAt: timestamp,
-          syncStatus: 'pending',
-        };
-        nextOrder += 1000;
-        return newItem;
+        let nextOrder = (lastItem?.order ?? 0) + 1000;
+        const timestamp = Date.now();
+
+        const newItems: BudgetItem[] = itemsToAppend.map((item) => {
+          const newItem: BudgetItem = {
+            id: crypto.randomUUID(),
+            walletId,
+            order: nextOrder,
+            name: item.name,
+            type: item.type,
+            amount: item.amount,
+            categoryTag: item.categoryTag,
+            date: item.date,
+            createdAt: timestamp,
+            updatedAt: timestamp,
+            syncStatus: 'pending',
+          };
+          nextOrder += 1000;
+          return newItem;
+        });
+
+        await db.budgetItems.bulkAdd(newItems);
+        insertedCount = newItems.length;
       });
 
-      await db.budgetItems.bulkAdd(newItems);
-      return { ok: true, insertedCount: newItems.length };
+      return { ok: true, insertedCount };
     } catch (error) {
       console.error('Failed to append pasted budget items:', error);
       return { ok: false, error: 'db-error' };

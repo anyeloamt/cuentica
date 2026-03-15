@@ -34,6 +34,9 @@ const DEFAULT_TOAST_DURATION_MS = 3000;
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
+/**
+ * Provides global toast queue state and toast actions.
+ */
 export function ToastProvider({ children }: { children: ReactNode }): JSX.Element {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const timersRef = useRef<Map<string, number>>(new Map());
@@ -95,6 +98,9 @@ export function ToastProvider({ children }: { children: ReactNode }): JSX.Elemen
   return <ToastContext.Provider value={value}>{children}</ToastContext.Provider>;
 }
 
+/**
+ * Returns toast state/actions from the nearest provider.
+ */
 export function useToast(): ToastContextType {
   const context = useContext(ToastContext);
 

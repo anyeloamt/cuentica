@@ -1,12 +1,16 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 
+import { useBudgetClipboard } from '../../hooks/useBudgetClipboard';
 import { useBudgetItems } from '../../hooks/useBudgetItems';
 import { useWalletName } from '../../hooks/useWalletName';
 import { generatePdf } from '../../lib/pdf';
 import { sharePdf } from '../../lib/share';
 
 import { BudgetTable } from './BudgetTable';
+
+const actionButtonClassName =
+  'flex h-8 w-8 items-center justify-center rounded-full border border-border bg-bg-secondary text-text-secondary transition-colors hover:border-accent hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer';
 
 export function WalletDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
@@ -16,12 +20,18 @@ export function WalletDetailPage(): JSX.Element {
   const {
     items,
     addItems,
+    appendItemsFromPaste,
     trimEmptyRows,
     updateItem,
     deleteItem,
     restoreItem,
     reorderBudgetItems,
   } = useBudgetItems(walletId);
+  const { canCopy, handleCopy, handlePaste } = useBudgetClipboard({
+    walletId,
+    items,
+    appendItemsFromPaste,
+  });
 
   const [exporting, setExporting] = useState(false);
 
@@ -43,21 +53,74 @@ export function WalletDetailPage(): JSX.Element {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex justify-end px-2 pt-1">
+      <div className="flex justify-end gap-2 px-2 pt-1">
+        <button
+          type="button"
+          onClick={() => {
+            void handleCopy();
+          }}
+          disabled={!canCopy}
+          className={actionButtonClassName}
+          aria-label="Copy items"
+          title="Copy items"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+            className="h-4 w-4"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125H4.125A1.125 1.125 0 0 1 3 20.625V8.625c0-.621.504-1.125 1.125-1.125H7.5m8.25 9.75h4.125c.621 0 1.125-.504 1.125-1.125V4.125A1.125 1.125 0 0 0 19.875 3H9.375C8.754 3 8.25 3.504 8.25 4.125V7.5"
+            />
+          </svg>
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            void handlePaste();
+          }}
+          className={actionButtonClassName}
+          aria-label="Paste items"
+          title="Paste items"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+            className="h-4 w-4"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M9 5.25h6m-6 3h6m-9 9h12a2.25 2.25 0 0 0 2.25-2.25V5.625A2.625 2.625 0 0 0 17.625 3H15A2.25 2.25 0 0 0 12.75.75h-1.5A2.25 2.25 0 0 0 9 3H6.375A2.625 2.625 0 0 0 3.75 5.625V15A2.25 2.25 0 0 0 6 17.25Z"
+            />
+          </svg>
+        </button>
         <button
           type="button"
           onClick={handleExport}
           disabled={exporting || !hasExportableItems}
-          className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-bg-secondary text-text-secondary transition-all hover:border-accent hover:text-accent disabled:opacity-50 cursor-pointer"
+          className={actionButtonClassName}
           aria-label="Export PDF"
           aria-busy={exporting}
+          title="Export PDF"
         >
           {exporting ? (
             <svg
-              className="animate-spin h-5 w-5"
+              className="h-4 w-4 animate-spin"
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
+              aria-hidden="true"
             >
               <circle
                 className="opacity-25"
@@ -80,7 +143,8 @@ export function WalletDetailPage(): JSX.Element {
               viewBox="0 0 24 24"
               strokeWidth={1.5}
               stroke="currentColor"
-              className="w-5 h-5"
+              className="h-4 w-4"
+              aria-hidden="true"
             >
               <path
                 strokeLinecap="round"

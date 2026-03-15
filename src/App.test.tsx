@@ -3,8 +3,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 
 import { App } from './App';
+import { BudgetClipboardProvider } from './context/BudgetClipboardContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
+import { ToastProvider } from './context/ToastContext';
 
 const mockCreateWallet = vi.fn().mockResolvedValue({ ok: true });
 const mockUseWallets = vi.fn();
@@ -16,11 +18,31 @@ vi.mock('./hooks/useWallets', () => ({
 vi.mock('./hooks/useBudgetItems', () => ({
   useBudgetItems: () => ({
     items: [],
-    addItem: vi.fn(),
+    addItems: vi.fn().mockResolvedValue({ ok: true, ids: [] }),
+    appendItemsFromPaste: vi.fn().mockResolvedValue({ ok: true, insertedCount: 0 }),
+    trimEmptyRows: vi.fn().mockResolvedValue({ ok: true, count: 0 }),
     updateItem: vi.fn(),
-    deleteItem: vi.fn(),
+    deleteItem: vi.fn().mockResolvedValue({ ok: true }),
+    restoreItem: vi.fn().mockResolvedValue({ ok: true }),
+    reorderBudgetItems: vi.fn().mockResolvedValue({ ok: true }),
   }),
 }));
+
+function renderApp(initialEntries: string[] = ['/']): void {
+  render(
+    <MemoryRouter initialEntries={initialEntries}>
+      <ThemeProvider>
+        <AuthProvider>
+          <BudgetClipboardProvider>
+            <ToastProvider>
+              <App />
+            </ToastProvider>
+          </BudgetClipboardProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </MemoryRouter>
+  );
+}
 
 describe('App', () => {
   beforeEach(() => {
@@ -35,54 +57,22 @@ describe('App', () => {
   });
 
   it('renders without crashing', () => {
-    render(
-      <MemoryRouter>
-        <ThemeProvider>
-          <AuthProvider>
-            <App />
-          </AuthProvider>
-        </ThemeProvider>
-      </MemoryRouter>
-    );
+    renderApp();
     expect(screen.getByText('Cuentica')).toBeInTheDocument();
   });
 
   it('renders HomePage at /', () => {
-    render(
-      <MemoryRouter initialEntries={['/']}>
-        <ThemeProvider>
-          <AuthProvider>
-            <App />
-          </AuthProvider>
-        </ThemeProvider>
-      </MemoryRouter>
-    );
+    renderApp(['/']);
     expect(screen.getByText(/no wallets yet/i)).toBeInTheDocument();
   });
 
   it('renders WalletDetailPage at /wallet/:id', () => {
-    render(
-      <MemoryRouter initialEntries={['/wallet/abc']}>
-        <ThemeProvider>
-          <AuthProvider>
-            <App />
-          </AuthProvider>
-        </ThemeProvider>
-      </MemoryRouter>
-    );
+    renderApp(['/wallet/abc']);
     expect(screen.getByText(/no items yet/i)).toBeInTheDocument();
   });
 
   it('redirects /nonexistent to home', () => {
-    render(
-      <MemoryRouter initialEntries={['/nonexistent']}>
-        <ThemeProvider>
-          <AuthProvider>
-            <App />
-          </AuthProvider>
-        </ThemeProvider>
-      </MemoryRouter>
-    );
+    renderApp(['/nonexistent']);
     expect(screen.getByText(/no wallets yet/i)).toBeInTheDocument();
   });
 });

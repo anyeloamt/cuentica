@@ -4,7 +4,10 @@ import { BrowserRouter } from 'react-router-dom';
 
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
+import { BudgetClipboardProvider } from './context/BudgetClipboardContext';
+import { ToastProvider } from './context/ToastContext';
 import { App } from './App';
+import { ToastViewport } from './components/Feedback/ToastViewport';
 import './styles/global.css';
 
 const applyInitialTheme = (): void => {
@@ -32,7 +35,12 @@ createRoot(rootElement).render(
     <BrowserRouter>
       <ThemeProvider>
         <AuthProvider>
-          <App />
+          <BudgetClipboardProvider>
+            <ToastProvider>
+              <App />
+              <ToastViewport />
+            </ToastProvider>
+          </BudgetClipboardProvider>
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>

@@ -22,3 +22,12 @@ export interface BudgetItem extends SyncableEntity {
   date?: string;
   categoryTag?: string;
 }
+
+export type {
+  AppendBudgetItemsResult,
+  CopiedBudgetItem,
+  CopiedBudgetItemsPayload,
+  ParseBudgetItemsError,
+  ParseBudgetItemsResult,
+  PasteBudgetItemsResult,
+} from './clipboard';

@@ -8,9 +8,11 @@ const mockReverse = vi.fn();
 const mockEquals = vi.fn();
 const mockWhere = vi.fn();
 const mockAdd = vi.fn();
+const mockBulkAdd = vi.fn();
 const mockUpdate = vi.fn();
 const mockDelete = vi.fn();
 const mockGet = vi.fn();
+const mockTransaction = vi.fn();
 
 vi.mock('dexie-react-hooks', () => ({
   useLiveQuery: (querier: () => unknown) => querier(),
@@ -18,9 +20,11 @@ vi.mock('dexie-react-hooks', () => ({
 
 vi.mock('../lib/db', () => ({
   db: {
+    transaction: (...args: unknown[]) => mockTransaction(...args),
     budgetItems: {
       where: (...args: unknown[]) => mockWhere(...args),
       add: (...args: unknown[]) => mockAdd(...args),
+      bulkAdd: (...args: unknown[]) => mockBulkAdd(...args),
       update: (...args: unknown[]) => mockUpdate(...args),
       delete: (...args: unknown[]) => mockDelete(...args),
       get: (...args: unknown[]) => mockGet(...args),
@@ -31,6 +35,10 @@ vi.mock('../lib/db', () => ({
 describe('useBudgetItems', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+
+    mockTransaction.mockImplementation(
+      async (_mode: string, _table: unknown, callback: () => Promise<void>) => callback()
+    );
 
     mockWhere.mockReturnValue({
       equals: mockEquals,
@@ -145,6 +153,67 @@ describe('useBudgetItems', () => {
       const res = await result.current.updateItem('i1', { name: 'Rent' });
 
       expect(res).toEqual({ ok: false, error: 'db-error' });
+    });
+  });
+
+  describe('appendItemsFromPaste', () => {
+    it('appends pasted items preserving values and 1000 spacing', async () => {
+      const walletId = 'w1';
+      mockSortBy.mockResolvedValue([{ order: 3000 }]);
+      mockBulkAdd.mockResolvedValue(undefined);
+
+      const { result } = renderHook(() => useBudgetItems(walletId));
+      const appendResult = await result.current.appendItemsFromPaste([
+        {
+          name: 'Salary',
+          type: '+',
+          amount: 1500,
+          categoryTag: 'Income',
+          date: '2026-03-15',
+        },
+        {
+          name: 'Rent',
+          type: '-',
+          amount: 700,
+        },
+      ]);
+
+      expect(appendResult).toEqual({ ok: true, insertedCount: 2 });
+      expect(mockBulkAdd).toHaveBeenCalledWith([
+        expect.objectContaining({
+          walletId,
+          order: 4000,
+          name: 'Salary',
+          type: '+',
+          amount: 1500,
+          categoryTag: 'Income',
+          date: '2026-03-15',
+          syncStatus: 'pending',
+          createdAt: expect.any(Number),
+          updatedAt: expect.any(Number),
+          id: expect.any(String),
+        }),
+        expect.objectContaining({
+          walletId,
+          order: 5000,
+          name: 'Rent',
+          type: '-',
+          amount: 700,
+          syncStatus: 'pending',
+          createdAt: expect.any(Number),
+          updatedAt: expect.any(Number),
+          id: expect.any(String),
+        }),
+      ]);
+    });
+
+    it('returns no-items when the pasted payload is empty', async () => {
+      const { result } = renderHook(() => useBudgetItems('wallet-id'));
+
+      const appendResult = await result.current.appendItemsFromPaste([]);
+
+      expect(appendResult).toEqual({ ok: false, error: 'no-items' });
+      expect(mockBulkAdd).not.toHaveBeenCalled();
     });
   });
 

@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 
 import { db } from '../lib/db';
-import type { BudgetItem } from '../types';
+import type { BudgetItem, CopiedBudgetItem, PasteBudgetItemsResult } from '../types';
 
 export function useBudgetItems(walletId: string) {
   const items = useLiveQuery(
@@ -82,6 +82,51 @@ export function useBudgetItems(walletId: string) {
     } catch (error) {
       console.error('Failed to add budget items:', error);
       return { ok: false as const, error: 'db-error' };
+    }
+  };
+
+  const appendItemsFromPaste = async (
+    itemsToAppend: CopiedBudgetItem[]
+  ): Promise<PasteBudgetItemsResult> => {
+    if (itemsToAppend.length === 0) {
+      return { ok: false, error: 'no-items' };
+    }
+
+    try {
+      const lastItem = await db.budgetItems
+        .where('walletId')
+        .equals(walletId)
+        .filter((item) => !item.deleted)
+        .reverse()
+        .sortBy('order')
+        .then((items) => items[0]);
+
+      let nextOrder = (lastItem?.order ?? 0) + 1000;
+      const timestamp = Date.now();
+
+      const newItems: BudgetItem[] = itemsToAppend.map((item) => {
+        const newItem: BudgetItem = {
+          id: crypto.randomUUID(),
+          walletId,
+          order: nextOrder,
+          name: item.name,
+          type: item.type,
+          amount: item.amount,
+          categoryTag: item.categoryTag,
+          date: item.date,
+          createdAt: timestamp,
+          updatedAt: timestamp,
+          syncStatus: 'pending',
+        };
+        nextOrder += 1000;
+        return newItem;
+      });
+
+      await db.budgetItems.bulkAdd(newItems);
+      return { ok: true, insertedCount: newItems.length };
+    } catch (error) {
+      console.error('Failed to append pasted budget items:', error);
+      return { ok: false, error: 'db-error' };
     }
   };
 
@@ -193,6 +238,7 @@ export function useBudgetItems(walletId: string) {
     items,
     addItem,
     addItems,
+    appendItemsFromPaste,
     trimEmptyRows,
     updateItem,
     deleteItem,

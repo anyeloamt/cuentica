@@ -71,8 +71,8 @@ describe('App', () => {
     expect(screen.getByText(/no items yet/i)).toBeInTheDocument();
   });
 
-  it('redirects /nonexistent to home', () => {
+  it('renders NotFoundPage at /nonexistent', () => {
     renderApp(['/nonexistent']);
-    expect(screen.getByText(/no wallets yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/page not found/i)).toBeInTheDocument();
   });
 });

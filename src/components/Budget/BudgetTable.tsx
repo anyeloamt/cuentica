@@ -200,7 +200,7 @@ export function BudgetTable({
     <div className="flex flex-col h-full w-full max-w-2xl mx-auto">
       <div className="flex-grow overflow-auto pb-20 px-2">
         {items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-32 text-gray-400 gap-2">
+          <div className="flex flex-col items-center justify-center h-32 text-text-muted gap-2">
             <p>No items yet.</p>
             <p>Tap &quot;Add item&quot; to start.</p>
           </div>
@@ -247,7 +247,7 @@ export function BudgetTable({
           <button
             type="button"
             onClick={handleAddItems}
-            className="flex-grow flex items-center justify-center py-2 border-2 border-dashed border-border rounded-lg text-gray-500 hover:text-gray-700 hover:border-gray-400 transition-colors"
+            className="flex-grow flex items-center justify-center py-2 border-2 border-dashed border-border rounded-lg text-text-secondary hover:text-text-primary hover:border-text-muted transition-colors"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -285,7 +285,7 @@ export function BudgetTable({
       {deletedItems.length > 0 && (
         <div
           aria-live="polite"
-          className="fixed bottom-16 left-1/2 transform -translate-x-1/2 bg-gray-800 dark:bg-gray-700 text-white px-4 py-3 rounded-lg shadow-lg z-20 flex items-center gap-4 transition-opacity duration-300"
+          className="fixed bottom-16 left-1/2 transform -translate-x-1/2 bg-bg-inverse text-text-inverse px-4 py-3 rounded-lg shadow-lg z-20 flex items-center gap-4 transition-opacity duration-300"
         >
           <span>
             {deletedItems.length === 1
@@ -295,7 +295,7 @@ export function BudgetTable({
           <button
             type="button"
             onClick={handleUndo}
-            className="font-semibold text-accent hover:text-blue-300"
+            className="font-semibold text-accent hover:text-accent/70"
           >
             Undo
           </button>

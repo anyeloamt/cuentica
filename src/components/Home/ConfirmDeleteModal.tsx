@@ -26,21 +26,18 @@ export function ConfirmDeleteModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg-overlay backdrop-blur-sm p-4 animate-in fade-in duration-200">
       <div
-        className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4 animate-in zoom-in-95 duration-200"
+        className="bg-bg-elevated rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4 animate-in zoom-in-95 duration-200"
         role="dialog"
         aria-modal="true"
         aria-labelledby="delete-wallet-title"
       >
-        <h2
-          id="delete-wallet-title"
-          className="text-xl font-bold text-gray-900 dark:text-white"
-        >
+        <h2 id="delete-wallet-title" className="text-xl font-bold text-text-primary">
           Delete {walletName}?
         </h2>
 
-        <p className="text-gray-500 dark:text-gray-400">
+        <p className="text-text-secondary">
           All budget items in this wallet will be lost. This action cannot be undone.
         </p>
 
@@ -50,7 +47,7 @@ export function ConfirmDeleteModal({
             type="button"
             onClick={onCancel}
             disabled={isDeleting}
-            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            className="px-4 py-2 text-sm font-medium text-text-secondary hover:bg-bg-hover rounded-lg transition-colors"
           >
             Cancel
           </button>

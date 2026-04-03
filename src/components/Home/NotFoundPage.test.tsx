@@ -1,38 +1,79 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
+import { render, screen, act } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 
-import { HomePage } from './HomePage';
 import { NotFoundPage } from './NotFoundPage';
 
-const mockCreateWallet = vi.fn().mockResolvedValue({ ok: true });
-const mockUseWallets = vi.fn();
+const mockNavigate = vi.fn();
 
-vi.mock('../../hooks/useWallets', () => ({
-  useWallets: () => mockUseWallets(),
-}));
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
 
 describe('NotFoundPage', () => {
   beforeEach(() => {
-    mockUseWallets.mockReset();
-    mockUseWallets.mockReturnValue({
-      wallets: [],
-      createWallet: mockCreateWallet,
-      deleteWallet: vi.fn(),
-      renameWallet: vi.fn(),
-      reorderWallet: vi.fn(),
-    });
+    mockNavigate.mockReset();
+    vi.useFakeTimers();
   });
 
-  it('redirects to home when navigating to nonexistent route', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('renders the 404 message', () => {
     render(
       <MemoryRouter initialEntries={['/nonexistent']}>
         <Routes>
-          <Route path="/" element={<HomePage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </MemoryRouter>
     );
-    expect(screen.getByText(/no wallets yet/i)).toBeInTheDocument();
+    expect(screen.getByText('Page not found')).toBeInTheDocument();
+    expect(screen.getByText(/Hmm, this page doesn't exist/i)).toBeInTheDocument();
+  });
+
+  it('shows the "Go home" link pointing to "/"', () => {
+    render(
+      <MemoryRouter initialEntries={['/nonexistent']}>
+        <Routes>
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </MemoryRouter>
+    );
+    const link = screen.getByRole('link', { name: /go home/i });
+    expect(link).toBeInTheDocument();
+    expect(link).toHaveAttribute('href', '/');
+  });
+
+  it('auto-redirects after timer', () => {
+    render(
+      <MemoryRouter initialEntries={['/nonexistent']}>
+        <Routes>
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('Redirecting in 3...')).toBeInTheDocument();
+
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(screen.getByText('Redirecting in 2...')).toBeInTheDocument();
+
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(screen.getByText('Redirecting in 1...')).toBeInTheDocument();
+
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+
+    expect(mockNavigate).toHaveBeenCalledWith('/', { replace: true });
   });
 });

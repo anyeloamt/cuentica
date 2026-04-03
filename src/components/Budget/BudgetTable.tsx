@@ -285,7 +285,7 @@ export function BudgetTable({
       {deletedItems.length > 0 && (
         <div
           aria-live="polite"
-          className="fixed bottom-16 left-1/2 transform -translate-x-1/2 bg-bg-secondary text-text-primary px-4 py-3 rounded-lg shadow-lg z-20 flex items-center gap-4 transition-opacity duration-300"
+          className="fixed bottom-16 left-1/2 transform -translate-x-1/2 bg-bg-inverse text-text-inverse px-4 py-3 rounded-lg shadow-lg z-20 flex items-center gap-4 transition-opacity duration-300"
         >
           <span>
             {deletedItems.length === 1
@@ -295,7 +295,7 @@ export function BudgetTable({
           <button
             type="button"
             onClick={handleUndo}
-            className="font-semibold text-accent hover:text-accent"
+            className="font-semibold text-accent hover:text-accent/70"
           >
             Undo
           </button>

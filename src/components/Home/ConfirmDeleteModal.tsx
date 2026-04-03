@@ -28,7 +28,7 @@ export function ConfirmDeleteModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg-overlay backdrop-blur-sm p-4 animate-in fade-in duration-200">
       <div
-        className="bg-bg-primary rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4 animate-in zoom-in-95 duration-200"
+        className="bg-bg-elevated rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4 animate-in zoom-in-95 duration-200"
         role="dialog"
         aria-modal="true"
         aria-labelledby="delete-wallet-title"

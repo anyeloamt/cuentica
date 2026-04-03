@@ -46,17 +46,14 @@ export function CreateWalletModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg-overlay backdrop-blur-sm p-4 animate-in fade-in duration-200">
       <div
-        className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4 animate-in zoom-in-95 duration-200"
+        className="bg-bg-primary rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4 animate-in zoom-in-95 duration-200"
         role="dialog"
         aria-modal="true"
         aria-labelledby="create-wallet-title"
       >
-        <h2
-          id="create-wallet-title"
-          className="text-xl font-bold text-gray-900 dark:text-white"
-        >
+        <h2 id="create-wallet-title" className="text-xl font-bold text-text-primary">
           New Wallet
         </h2>
 
@@ -72,7 +69,7 @@ export function CreateWalletModal({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g., Monthly Expenses"
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-colors"
+              className="w-full px-4 py-3 rounded-lg border border-border bg-bg-secondary text-text-primary focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition-colors"
               autoComplete="off"
               // eslint-disable-next-line jsx-a11y/no-autofocus
               autoFocus
@@ -84,14 +81,14 @@ export function CreateWalletModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              className="px-4 py-2 text-sm font-medium text-text-secondary hover:bg-bg-hover rounded-lg transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting || !name.trim()}
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-sm transition-colors"
+              className="px-4 py-2 text-sm font-medium text-white bg-accent hover:bg-accent/90 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-sm transition-colors"
             >
               {isSubmitting ? 'Creating...' : 'Create'}
             </button>

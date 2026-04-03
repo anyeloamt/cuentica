@@ -5,8 +5,11 @@
 @theme {
   --color-bg-primary: var(--bg-primary);
   --color-bg-secondary: var(--bg-secondary);
+  --color-bg-hover: var(--bg-hover);
+  --color-bg-overlay: var(--bg-overlay);
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
   --color-accent: var(--accent);
   --color-border: var(--border);
 }
@@ -14,8 +17,11 @@
 :root {
   --bg-primary: #ffffff;
   --bg-secondary: #f5f5f5;
+  --bg-hover: #f3f4f6;
+  --bg-overlay: rgb(0 0 0 / 0.5);
   --text-primary: #213547;
   --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
   --accent: #2563eb;
   --border: #e5e7eb;
 
@@ -27,8 +33,11 @@
 [data-theme='dark'] {
   --bg-primary: #1a1a2e;
   --bg-secondary: #242424;
+  --bg-hover: #374151;
+  --bg-overlay: rgb(0 0 0 / 0.5);
   --text-primary: rgba(255, 255, 255, 0.87);
   --text-secondary: rgba(255, 255, 255, 0.6);
+  --text-muted: #6b7280;
   --accent: #60a5fa;
   --border: #374151;
 }

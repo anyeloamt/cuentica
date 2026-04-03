@@ -160,7 +160,7 @@ function BudgetRowComponent({
       <div
         {...attributes}
         {...listeners}
-        className="w-8 h-8 flex items-center justify-center cursor-grab active:cursor-grabbing text-gray-400 hover:text-text-primary touch-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:outline-none rounded"
+        className="w-8 h-8 flex items-center justify-center cursor-grab active:cursor-grabbing text-text-muted hover:text-text-primary touch-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:outline-none rounded"
         aria-label="Drag to reorder"
       >
         <svg
@@ -191,7 +191,7 @@ function BudgetRowComponent({
           onFocus={handleFocus}
           onBlur={handleBlur}
           placeholder="Item name"
-          className="w-full bg-transparent border-none outline-none text-text-primary placeholder-gray-400"
+          className="w-full bg-transparent border-none outline-none text-text-primary placeholder-text-muted"
           aria-label="Item name"
         />
       </div>
@@ -218,7 +218,7 @@ function BudgetRowComponent({
           onFocus={handleFocus}
           onBlur={handleBlur}
           placeholder="0"
-          className="w-full bg-transparent border-none outline-none text-right text-text-primary placeholder-gray-400 font-mono"
+          className="w-full bg-transparent border-none outline-none text-right text-text-primary placeholder-text-muted font-mono"
           aria-label="Amount"
         />
       </div>
@@ -228,7 +228,7 @@ function BudgetRowComponent({
           <button
             type="button"
             onClick={handleInsertBelow}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-text-secondary hover:bg-blue-50 hover:text-blue-500 transition-all"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-text-secondary hover:bg-accent/10 hover:text-accent transition-all"
             aria-label="Insert item below"
           >
             <svg
@@ -251,7 +251,7 @@ function BudgetRowComponent({
         <button
           type="button"
           onClick={handleDelete}
-          className="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 dark:text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950 transition-all"
+          className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950 transition-all"
           aria-label="Delete item"
         >
           <svg

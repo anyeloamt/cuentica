@@ -84,12 +84,12 @@ describe('ThemeContext', () => {
 
     const button = screen.getByText('Toggle');
 
-    expect(meta.getAttribute('content')).toBe('#ffffff');
+    expect(meta.getAttribute('content')).toBe('#faf9f7');
 
     act(() => {
       button.click();
     });
-    expect(meta.getAttribute('content')).toBe('#1a1a2e');
+    expect(meta.getAttribute('content')).toBe('#1c1917');
 
     document.head.removeChild(meta);
   });

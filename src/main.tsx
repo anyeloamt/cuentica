@@ -18,7 +18,7 @@ const applyInitialTheme = (): void => {
 
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
     if (metaThemeColor) {
-      metaThemeColor.setAttribute('content', theme === 'dark' ? '#1a1a2e' : '#ffffff');
+      metaThemeColor.setAttribute('content', theme === 'dark' ? '#1c1917' : '#faf9f7');
     }
   } catch {
     document.documentElement.setAttribute('data-theme', 'light');

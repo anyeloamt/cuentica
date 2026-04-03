@@ -132,7 +132,7 @@ export function AuthPage(): JSX.Element {
         <button
           type="submit"
           disabled={magicLinkLoading}
-          className="w-full bg-accent text-white rounded-lg p-3 font-medium hover:bg-opacity-90 transition-opacity disabled:opacity-50 cursor-pointer"
+          className="w-full bg-accent text-text-on-accent rounded-lg p-3 font-medium hover:bg-opacity-90 transition-opacity disabled:opacity-50 cursor-pointer"
         >
           {magicLinkLoading ? 'Sending...' : 'Send magic link'}
         </button>

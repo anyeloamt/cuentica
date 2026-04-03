@@ -88,7 +88,7 @@ export function CreateWalletModal({
             <button
               type="submit"
               disabled={isSubmitting || !name.trim()}
-              className="px-4 py-2 text-sm font-medium text-white bg-accent hover:bg-accent/90 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-sm transition-colors"
+              className="px-4 py-2 text-sm font-medium text-text-on-accent bg-accent hover:bg-accent/90 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-sm transition-colors"
             >
               {isSubmitting ? 'Creating...' : 'Create'}
             </button>

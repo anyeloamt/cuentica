@@ -59,7 +59,7 @@ export function Header(): JSX.Element {
         {!loading && user && (
           <Link
             to="/auth"
-            className="flex items-center justify-center w-8 h-8 rounded-full bg-accent text-white text-sm font-medium hover:opacity-90 transition-opacity"
+            className="flex items-center justify-center w-8 h-8 rounded-full bg-accent text-text-on-accent text-sm font-medium hover:opacity-90 transition-opacity"
           >
             {user.email?.charAt(0).toUpperCase()}
           </Link>

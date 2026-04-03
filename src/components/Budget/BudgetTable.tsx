@@ -264,7 +264,7 @@ export function BudgetTable({
                 d="M12 4.5v15m7.5-7.5h-15"
               />
             </svg>
-            + Add rows
+            Add rows
           </button>
 
           {items.length > 0 &&

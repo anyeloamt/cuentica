@@ -66,7 +66,7 @@ export function App(): JSX.Element {
                 <button
                   type="button"
                   onClick={retry}
-                  className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 cursor-pointer"
+                  className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-text-on-accent transition-opacity hover:opacity-90 cursor-pointer"
                 >
                   Retry
                 </button>

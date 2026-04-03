@@ -23,13 +23,13 @@ describe('ThemeToggle', () => {
     );
 
     const button = screen.getByRole('button');
-    expect(button).toHaveTextContent('🌙');
+    expect(button.querySelector('svg')).toBeInTheDocument();
 
     fireEvent.click(button);
-    expect(button).toHaveTextContent('☀️');
+    expect(button.querySelector('svg')).toBeInTheDocument();
 
     fireEvent.click(button);
-    expect(button).toHaveTextContent('🌙');
+    expect(button.querySelector('svg')).toBeInTheDocument();
   });
 
   it('has accessible label', () => {

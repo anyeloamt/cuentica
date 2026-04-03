@@ -182,7 +182,6 @@ function SortableWalletCard({
               </span>
             )}
           </div>
-          <p className="mt-1 text-sm text-text-secondary">Tap to view transactions</p>
         </div>
       </Link>
     </div>

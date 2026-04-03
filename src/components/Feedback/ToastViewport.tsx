@@ -1,9 +1,10 @@
 import { useToast } from '../../context/ToastContext';
 
 const toastStylesByType: Record<'success' | 'error' | 'info', string> = {
-  success: 'border-green-500/40 bg-green-900/85 text-green-100',
-  error: 'border-red-500/40 bg-red-900/85 text-red-100',
-  info: 'border-slate-500/40 bg-slate-900/85 text-slate-100',
+  success:
+    'border-green-500/40 bg-green-50 text-green-800 dark:bg-green-900/85 dark:text-green-100',
+  error: 'border-red-500/40 bg-red-50 text-red-800 dark:bg-red-900/85 dark:text-red-100',
+  info: 'border-slate-500/40 bg-slate-50 text-slate-800 dark:bg-slate-900/85 dark:text-slate-100',
 };
 
 /**

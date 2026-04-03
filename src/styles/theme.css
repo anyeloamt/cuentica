@@ -14,12 +14,12 @@
   --color-text-secondary: var(--text-secondary);
   --color-text-muted: var(--text-muted);
   --color-text-inverse: var(--text-inverse);
+  --color-text-on-accent: var(--text-on-accent);
   --color-accent: var(--accent);
   --color-border: var(--border);
 }
 
 :root {
-  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
   --bg-primary: #faf9f7;
   --bg-secondary: #f3f1ee;
   --bg-elevated: #ffffff;
@@ -27,10 +27,11 @@
   --bg-overlay: rgba(28, 25, 23, 0.5);
   --bg-inverse: #292524;
   --text-primary: #1c1917;
-  --text-secondary: #78716c;
+  --text-secondary: #57534e;
   --text-muted: #a8a29e;
   --text-inverse: #fafaf9;
-  --accent: #0d9488;
+  --text-on-accent: #ffffff;
+  --accent: #0f766e;
   --border: #e7e5e4;
 
   transition:
@@ -49,6 +50,7 @@
   --text-secondary: #a8a29e;
   --text-muted: #78716c;
   --text-inverse: #fafaf9;
+  --text-on-accent: #1c1917;
   --accent: #2dd4bf;
   --border: #44403c;
 }

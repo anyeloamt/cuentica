@@ -22,11 +22,19 @@ export function ReloadPrompt({
       </p>
       <div className="pwa-prompt__actions">
         {needRefresh && (
-          <button type="button" onClick={() => void onReload()}>
+          <button
+            type="button"
+            className="pwa-prompt__action-primary"
+            onClick={() => void onReload()}
+          >
             Reload
           </button>
         )}
-        <button type="button" onClick={onDismiss}>
+        <button
+          type="button"
+          className="pwa-prompt__action-secondary"
+          onClick={onDismiss}
+        >
           Dismiss
         </button>
       </div>

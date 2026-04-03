@@ -22,7 +22,11 @@ export function InstallPrompt({
     >
       <p>Install Cuentica for quicker access and offline support.</p>
       <div className="pwa-prompt__actions">
-        <button type="button" onClick={() => void onInstall()}>
+        <button
+          type="button"
+          className="pwa-prompt__action-primary"
+          onClick={() => void onInstall()}
+        >
           Install app
         </button>
       </div>

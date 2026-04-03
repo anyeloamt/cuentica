@@ -24,8 +24,26 @@ export function AuthPage(): JSX.Element {
         <p className="text-text-secondary mb-6">
           Sign-in is not configured. The app works fully offline.
         </p>
-        <Link to="/" className="text-accent hover:underline">
-          ← Back to app
+        <Link
+          to="/"
+          className="inline-flex items-center gap-1.5 text-accent hover:underline"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={2}
+            stroke="currentColor"
+            className="w-4 h-4"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15.75 19.5L8.25 12l7.5-7.5"
+            />
+          </svg>
+          Back to app
         </Link>
       </div>
     );
@@ -46,8 +64,26 @@ export function AuthPage(): JSX.Element {
         >
           Sign out
         </button>
-        <Link to="/" className="text-accent hover:underline">
-          ← Back to app
+        <Link
+          to="/"
+          className="inline-flex items-center gap-1.5 text-accent hover:underline"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={2}
+            stroke="currentColor"
+            className="w-4 h-4"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15.75 19.5L8.25 12l7.5-7.5"
+            />
+          </svg>
+          Back to app
         </Link>
       </div>
     );
@@ -83,9 +119,24 @@ export function AuthPage(): JSX.Element {
     <div className="max-w-md mx-auto p-6 pt-12">
       <Link
         to="/"
-        className="text-text-secondary text-sm hover:text-text-primary mb-8 block"
+        className="inline-flex items-center gap-1.5 text-text-secondary text-sm hover:text-accent mb-8 transition-colors"
       >
-        ← Back to app
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth={2}
+          stroke="currentColor"
+          className="w-4 h-4"
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M15.75 19.5L8.25 12l7.5-7.5"
+          />
+        </svg>
+        Back to app
       </Link>
 
       <h1 className="text-2xl font-bold mb-2">Sign in to Cuentica</h1>

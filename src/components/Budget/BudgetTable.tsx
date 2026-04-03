@@ -193,16 +193,70 @@ export function BudgetTable({
   }, [items]);
 
   if (items === undefined) {
-    return <div className="p-4 text-center text-text-secondary">Loading...</div>;
+    return (
+      <div className="flex flex-col h-full w-full max-w-2xl mx-auto">
+        <div className="flex-grow overflow-auto pb-20 px-2">
+          <div className="flex flex-col">
+            <div className="flex px-2 py-1.5 text-xs font-semibold text-text-secondary uppercase tracking-wider border-b border-border">
+              <div className="w-8"></div>
+              <div className="w-6 text-center flex-shrink-0">#</div>
+              <div className="flex-grow pl-2">Name</div>
+              <div className="w-8 text-center">Type</div>
+              <div className="w-20 sm:w-24 text-right">Amount</div>
+              <div className="w-16"></div>
+            </div>
+            <div className="animate-pulse flex flex-col mt-2">
+              <p className="sr-only">Loading budget items...</p>
+              {[1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="flex items-center px-2 py-3 border-b border-border"
+                >
+                  <div className="w-8"></div>
+                  <div className="w-6"></div>
+                  <div className="flex-grow pl-2">
+                    <div className="h-5 bg-bg-secondary rounded w-3/4"></div>
+                  </div>
+                  <div className="w-8 px-1">
+                    <div className="h-5 bg-bg-secondary rounded w-full"></div>
+                  </div>
+                  <div className="w-20 sm:w-24 pl-2">
+                    <div className="h-5 bg-bg-secondary rounded w-full"></div>
+                  </div>
+                  <div className="w-16"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="flex flex-col h-full w-full max-w-2xl mx-auto">
       <div className="flex-grow overflow-auto pb-20 px-2">
         {items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-32 text-text-muted gap-2">
-            <p>No items yet.</p>
-            <p>Tap &quot;Add item&quot; to start.</p>
+          <div className="flex flex-col items-center justify-center p-12 text-center text-text-secondary bg-bg-secondary rounded-2xl border-2 border-dashed border-border mt-4">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+              className="h-12 w-12 text-text-muted mb-3"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"
+              />
+            </svg>
+            <p className="text-lg font-semibold text-text-primary mb-1">
+              Your budget starts here
+            </p>
+            <p>Add your first item to start tracking</p>
           </div>
         ) : (
           <div className="flex flex-col">

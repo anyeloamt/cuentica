@@ -62,7 +62,7 @@ describe('BudgetTable', () => {
         onReorderItems={mockReorderItems}
       />
     );
-    expect(screen.getByText('Loading...')).toBeInTheDocument();
+    expect(screen.getByText('Loading budget items...')).toBeInTheDocument();
   });
 
   it('renders empty state when items are empty', () => {
@@ -77,7 +77,7 @@ describe('BudgetTable', () => {
         onReorderItems={mockReorderItems}
       />
     );
-    expect(screen.getByText('No items yet.')).toBeInTheDocument();
+    expect(screen.getByText('Your budget starts here')).toBeInTheDocument();
   });
 
   it('renders items and calculates total correctly', () => {

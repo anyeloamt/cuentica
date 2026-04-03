@@ -15,7 +15,14 @@ export function AuthPage(): JSX.Element {
     text: string;
   } | null>(null);
 
-  if (loading) return <div className="p-4 text-center text-text-primary">Loading...</div>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[200px]">
+        <div className="w-8 h-8 border-4 border-border border-t-accent rounded-full animate-spin"></div>
+        <p className="sr-only">Loading...</p>
+      </div>
+    );
+  }
 
   if (!isConfigured) {
     return (

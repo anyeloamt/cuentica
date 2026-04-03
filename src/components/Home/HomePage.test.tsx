@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import userEvent from '@testing-library/user-event';
 
+import { ToastProvider } from '../../context/ToastContext';
+
 import { HomePage } from './HomePage';
 
 const mockUseWallets = vi.fn();
@@ -34,7 +36,9 @@ describe('HomePage', () => {
   it('renders FAB button', () => {
     render(
       <MemoryRouter>
-        <HomePage />
+        <ToastProvider>
+          <HomePage />
+        </ToastProvider>
       </MemoryRouter>
     );
 
@@ -53,11 +57,13 @@ describe('HomePage', () => {
 
     render(
       <MemoryRouter>
-        <HomePage />
+        <ToastProvider>
+          <HomePage />
+        </ToastProvider>
       </MemoryRouter>
     );
 
-    expect(screen.getByText(/no wallets yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/ready to start budgeting\?/i)).toBeInTheDocument();
   });
 
   it('renders wallet links from WalletList', () => {
@@ -79,7 +85,9 @@ describe('HomePage', () => {
 
     render(
       <MemoryRouter>
-        <HomePage />
+        <ToastProvider>
+          <HomePage />
+        </ToastProvider>
       </MemoryRouter>
     );
 
@@ -92,7 +100,9 @@ describe('HomePage', () => {
   it('opens create wallet modal when FAB is clicked', async () => {
     render(
       <MemoryRouter>
-        <HomePage />
+        <ToastProvider>
+          <HomePage />
+        </ToastProvider>
       </MemoryRouter>
     );
 
@@ -109,7 +119,9 @@ describe('HomePage', () => {
 
     render(
       <MemoryRouter>
-        <HomePage />
+        <ToastProvider>
+          <HomePage />
+        </ToastProvider>
       </MemoryRouter>
     );
 
@@ -141,7 +153,9 @@ describe('HomePage', () => {
 
     render(
       <MemoryRouter>
-        <HomePage />
+        <ToastProvider>
+          <HomePage />
+        </ToastProvider>
       </MemoryRouter>
     );
 
@@ -188,7 +202,9 @@ describe('HomePage', () => {
 
     render(
       <MemoryRouter>
-        <HomePage />
+        <ToastProvider>
+          <HomePage />
+        </ToastProvider>
       </MemoryRouter>
     );
 
@@ -243,7 +259,9 @@ describe('HomePage', () => {
 
     render(
       <MemoryRouter>
-        <HomePage />
+        <ToastProvider>
+          <HomePage />
+        </ToastProvider>
       </MemoryRouter>
     );
 
@@ -268,7 +286,9 @@ describe('HomePage', () => {
     const user = userEvent.setup();
     render(
       <MemoryRouter>
-        <HomePage />
+        <ToastProvider>
+          <HomePage />
+        </ToastProvider>
       </MemoryRouter>
     );
 
@@ -314,7 +334,9 @@ describe('HomePage', () => {
 
     render(
       <MemoryRouter>
-        <HomePage />
+        <ToastProvider>
+          <HomePage />
+        </ToastProvider>
       </MemoryRouter>
     );
 
@@ -340,7 +362,9 @@ describe('HomePage', () => {
 
     render(
       <MemoryRouter>
-        <HomePage />
+        <ToastProvider>
+          <HomePage />
+        </ToastProvider>
       </MemoryRouter>
     );
 

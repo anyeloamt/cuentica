@@ -117,7 +117,7 @@ describe('BudgetTable', () => {
       />
     );
 
-    fireEvent.click(screen.getByText('Add rows'));
+    fireEvent.click(screen.getByText('Add 5 rows'));
     expect(mockAddItems).toHaveBeenCalled();
   });
 

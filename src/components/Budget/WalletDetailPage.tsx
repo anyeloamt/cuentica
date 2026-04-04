@@ -68,8 +68,8 @@ export function WalletDetailPage(): JSX.Element {
           }}
           disabled={!canCopy}
           className={secondaryActionButtonClassName}
-          aria-label="Copy items"
-          title="Copy items"
+          aria-label="Copy all rows"
+          title="Copy all rows to clipboard"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -94,8 +94,8 @@ export function WalletDetailPage(): JSX.Element {
             void handlePaste();
           }}
           className={secondaryActionButtonClassName}
-          aria-label="Paste items"
-          title="Paste items"
+          aria-label="Paste rows"
+          title="Paste rows from clipboard"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"

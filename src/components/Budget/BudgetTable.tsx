@@ -401,7 +401,7 @@ export function BudgetTable({
                 d="M12 4.5v15m7.5-7.5h-15"
               />
             </svg>
-            Add rows
+            Add 5 rows
           </button>
 
           {items.length > 0 &&
@@ -413,7 +413,7 @@ export function BudgetTable({
                 className="px-4 py-2 text-sm font-medium text-text-secondary hover:text-text-primary transition-colors border border-border rounded-lg"
                 title="Remove empty rows from bottom"
               >
-                Trim
+                Remove empty
               </button>
             )}
         </div>

@@ -78,7 +78,7 @@ export function BudgetTable({
 
     const timer = setTimeout(() => {
       setDeletedItems([]);
-    }, 5000);
+    }, 8000);
 
     return () => clearTimeout(timer);
   }, [deletedItems]);

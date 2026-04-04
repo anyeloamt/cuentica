@@ -16,7 +16,13 @@ import { SyncProvider } from './hooks/useSync';
 import './components/Layout/pwaPrompts.css';
 
 export function App(): JSX.Element {
-  const { isInstallable, isInstalled, promptInstall } = useInstallPrompt();
+  const {
+    isInstallable,
+    isInstalled,
+    isDismissed,
+    promptInstall,
+    dismiss: dismissInstall,
+  } = useInstallPrompt();
   const { shouldShow: showIOSPrompt, dismiss: dismissIOSPrompt } = useIOSInstallPrompt();
   const { offlineReady, needRefresh, updateServiceWorker, dismiss } =
     usePwaUpdatePrompt();
@@ -33,7 +39,9 @@ export function App(): JSX.Element {
       <InstallPrompt
         isInstallable={isInstallable}
         isInstalled={isInstalled}
+        isDismissed={isDismissed}
         onInstall={promptInstall}
+        onDismiss={dismissInstall}
       />
       <IOSInstallPrompt shouldShow={showIOSPrompt} onDismiss={dismissIOSPrompt} />
       <Routes>

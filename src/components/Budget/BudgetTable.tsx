@@ -255,7 +255,7 @@ export function BudgetTable({
                 d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"
               />
             </svg>
-            <p className="text-lg font-semibold text-text-primary mb-1">
+            <p className="text-lg font-heading font-semibold text-text-primary mb-1">
               Your budget starts here
             </p>
             <p>Add your first item to start tracking</p>
@@ -405,13 +405,13 @@ export function BudgetTable({
       <div className="fixed bottom-0 left-0 right-0 bg-bg-primary border-t border-border p-3 shadow-lg z-10 safe-area-bottom">
         <div className="max-w-2xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-4 text-sm sm:text-base font-bold">
           <div className="flex w-full sm:w-auto justify-between sm:justify-start gap-4">
-            <span className="text-success">+{formatAmount(income)}</span>
-            <span className="text-error">-{formatAmount(expenses)}</span>
+            <span className="text-income">↑ +{formatAmount(income)}</span>
+            <span className="text-expense">↓ -{formatAmount(expenses)}</span>
           </div>
 
           <div className="flex w-full sm:w-auto justify-between sm:justify-end gap-2 border-t sm:border-t-0 border-border pt-2 sm:pt-0">
             <span className="text-text-secondary">Total</span>
-            <span className={balance >= 0 ? 'text-text-primary' : 'text-error'}>
+            <span className={balance >= 0 ? 'text-text-primary' : 'text-expense'}>
               {balance >= 0 ? '+' : '-'}
               {formatAmount(Math.abs(balance))}
             </span>

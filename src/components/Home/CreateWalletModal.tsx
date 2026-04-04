@@ -53,7 +53,10 @@ export function CreateWalletModal({
         aria-modal="true"
         aria-labelledby="create-wallet-title"
       >
-        <h2 id="create-wallet-title" className="text-xl font-bold text-text-primary">
+        <h2
+          id="create-wallet-title"
+          className="text-xl font-heading font-bold text-text-primary"
+        >
           New Wallet
         </h2>
 

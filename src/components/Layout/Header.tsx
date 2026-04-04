@@ -48,7 +48,9 @@ export function Header(): JSX.Element {
       </div>
 
       <div className="flex justify-center w-1/3">
-        <h1 className="text-lg font-bold text-center whitespace-nowrap overflow-hidden text-ellipsis text-accent">
+        <h1
+          className={`text-center whitespace-nowrap overflow-hidden text-ellipsis text-accent ${isHome ? 'text-xl font-heading font-semibold' : 'text-lg font-bold'}`}
+        >
           {title}
         </h1>
       </div>

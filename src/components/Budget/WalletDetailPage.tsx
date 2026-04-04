@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import { useBudgetClipboard } from '../../hooks/useBudgetClipboard';
 import { useBudgetItems } from '../../hooks/useBudgetItems';
 import { useWalletName } from '../../hooks/useWalletName';
+import { useToast } from '../../context/ToastContext';
 import { generatePdf } from '../../lib/pdf';
 import { sharePdf } from '../../lib/share';
 
@@ -21,6 +22,7 @@ export function WalletDetailPage(): JSX.Element {
   const walletId = id ?? '';
 
   const walletName = useWalletName(walletId) ?? 'Budget';
+  const { showToast } = useToast();
   const {
     items,
     addItems,
@@ -49,8 +51,8 @@ export function WalletDetailPage(): JSX.Element {
     try {
       const blob = generatePdf(walletName, items);
       await sharePdf(blob, walletName);
-    } catch (error) {
-      console.error('Export failed:', error);
+    } catch {
+      showToast({ type: 'error', message: 'Failed to export PDF. Please try again.' });
     } finally {
       setExporting(false);
     }

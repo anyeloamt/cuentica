@@ -146,7 +146,7 @@ export function AuthPage(): JSX.Element {
         Back to app
       </Link>
 
-      <h1 className="text-2xl font-bold mb-2">Sign in to Cuentica</h1>
+      <h1 className="text-2xl font-heading font-bold mb-2">Sign in to Cuentica</h1>
       <p className="text-text-secondary mb-8">
         Sync your wallets and budget data across all your devices.
       </p>
@@ -200,8 +200,8 @@ export function AuthPage(): JSX.Element {
         <div
           className={`mt-6 p-4 rounded-lg text-sm ${
             message.type === 'success'
-              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-              : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+              ? 'bg-success/10 text-success'
+              : 'bg-error/10 text-error'
           }`}
         >
           {message.text}

@@ -82,7 +82,7 @@ function SortableWalletCard({
     <div ref={setNodeRef} style={style} className="h-full">
       <Link
         to={`/wallet/${wallet.id}`}
-        className="group relative flex p-3 bg-bg-primary rounded-xl shadow-sm border border-border hover:shadow-md hover:border-accent/30 transition-all duration-200 items-stretch h-full"
+        className="group relative flex p-3 bg-bg-primary rounded-xl shadow-sm border border-border hover:shadow-md hover:border-accent/40 transition-all duration-200 items-stretch h-full"
       >
         <div
           {...attributes}
@@ -339,7 +339,7 @@ function WalletListComponent({
           />
         </svg>
         <div>
-          <p className="text-lg font-semibold text-text-primary mb-1">
+          <p className="text-lg font-heading font-semibold text-text-primary mb-1">
             Ready to start budgeting?
           </p>
           <p>Create your first wallet with the + button below</p>

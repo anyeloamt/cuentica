@@ -33,7 +33,10 @@ export function ConfirmDeleteModal({
         aria-modal="true"
         aria-labelledby="delete-wallet-title"
       >
-        <h2 id="delete-wallet-title" className="text-xl font-bold text-text-primary">
+        <h2
+          id="delete-wallet-title"
+          className="text-xl font-heading font-bold text-text-primary"
+        >
           Delete {walletName}?
         </h2>
 

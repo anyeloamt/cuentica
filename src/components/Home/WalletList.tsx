@@ -127,7 +127,7 @@ function SortableWalletCard({
               onDeleteWallet(wallet);
             }}
             aria-label={`Delete ${wallet.name}`}
-            className="absolute top-2 right-2 p-2 text-text-muted hover:text-red-500 hover:bg-bg-hover rounded-full transition-colors sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 z-10"
+            className="absolute top-2 right-2 p-2 text-text-muted hover:text-error hover:bg-bg-hover rounded-full transition-colors sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 z-10"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

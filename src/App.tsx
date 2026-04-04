@@ -62,7 +62,7 @@ export function App(): JSX.Element {
               </>
             ) : (
               <>
-                <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+                <p className="text-sm text-error">{error}</p>
                 <button
                   type="button"
                   onClick={retry}

@@ -252,7 +252,7 @@ function BudgetRowComponent({
         <button
           type="button"
           onClick={handleDelete}
-          className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950 transition-all"
+          className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted hover:text-error hover:bg-error/10 transition-all"
           aria-label="Delete item"
         >
           <svg

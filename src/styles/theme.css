@@ -15,6 +15,11 @@
   --color-text-inverse: var(--text-inverse);
   --color-accent: var(--accent);
   --color-border: var(--border);
+  --color-success: var(--success);
+  --color-error: var(--error);
+  --color-warning: var(--warning);
+  --color-destructive: var(--destructive);
+  --color-destructive-hover: var(--destructive-hover);
 }
 
 :root {
@@ -30,6 +35,11 @@
   --text-inverse: #fafaf9;
   --accent: #0f766e;
   --border: #d6d3d1;
+  --success: #16a34a;
+  --error: #dc2626;
+  --warning: #f59e0b;
+  --destructive: #dc2626;
+  --destructive-hover: #b91c1c;
 
   transition:
     background-color 0.2s ease,
@@ -49,4 +59,9 @@
   --text-inverse: rgba(255, 255, 255, 0.87);
   --accent: #2dd4bf;
   --border: #44403c;
+  --success: #4ade80;
+  --error: #f87171;
+  --warning: #fbbf24;
+  --destructive: #dc2626;
+  --destructive-hover: #b91c1c;
 }

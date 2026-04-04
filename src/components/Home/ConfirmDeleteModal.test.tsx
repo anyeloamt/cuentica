@@ -17,7 +17,7 @@ describe('ConfirmDeleteModal', () => {
 
     expect(screen.getByText('Delete Test Wallet?')).toBeInTheDocument();
     expect(
-      screen.getByText(/All budget items in this wallet will be lost/)
+      screen.getByText(/All budget items in this wallet will be removed/)
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();

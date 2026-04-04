@@ -219,7 +219,7 @@ describe('HomePage', () => {
       screen.getByRole('dialog', { name: /delete wallet to delete/i })
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/all budget items in this wallet will be lost/i)
+      screen.getByText(/all budget items in this wallet will be removed/i)
     ).toBeInTheDocument();
 
     // 3. Click delete in the modal

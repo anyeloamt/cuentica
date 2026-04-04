@@ -114,7 +114,7 @@ describe('WalletDetailPage', () => {
 
     renderWalletPage();
 
-    await user.click(screen.getByRole('button', { name: /copy items/i }));
+    await user.click(screen.getByRole('button', { name: /copy all rows/i }));
 
     expect(setCopiedBudgetItems).toHaveBeenCalledWith({
       sourceWalletId: 'abc123',
@@ -166,7 +166,7 @@ describe('WalletDetailPage', () => {
 
     renderWalletPage();
 
-    await user.click(screen.getByRole('button', { name: /paste items/i }));
+    await user.click(screen.getByRole('button', { name: /paste rows/i }));
 
     expect(getCopiedBudgetItems).toHaveBeenCalledTimes(1);
     expect(mockReadText).not.toHaveBeenCalled();
@@ -199,7 +199,7 @@ describe('WalletDetailPage', () => {
 
     renderWalletPage();
 
-    await user.click(screen.getByRole('button', { name: /paste items/i }));
+    await user.click(screen.getByRole('button', { name: /paste rows/i }));
 
     await waitFor(() => {
       expect(showToast).toHaveBeenCalledWith({

@@ -41,7 +41,8 @@ export function ConfirmDeleteModal({
         </h2>
 
         <p className="text-text-secondary">
-          All budget items in this wallet will be lost. This action cannot be undone.
+          All budget items in this wallet will be removed. You&apos;ll have a few seconds
+          to undo after deleting.
         </p>
 
         <div className="flex gap-3 justify-end pt-2">

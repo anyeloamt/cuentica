@@ -102,12 +102,10 @@ export function SyncIndicator(): JSX.Element | null {
           />
         )}
 
-        {syncState === 'error' && (
-          <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
-        )}
+        {syncState === 'error' && <span className="h-2.5 w-2.5 rounded-full bg-error" />}
 
         {syncState === 'idle' && pendingCount > 0 && (
-          <span className="h-2.5 w-2.5 rounded-full bg-orange-400" />
+          <span className="h-2.5 w-2.5 rounded-full bg-warning" />
         )}
       </button>
 
@@ -118,9 +116,7 @@ export function SyncIndicator(): JSX.Element | null {
             {formatRelativeSyncTime(lastSyncedAt)}
           </p>
           <p className="mt-1 text-xs text-text-secondary">Pending: {pendingCount}</p>
-          {error && (
-            <p className="mt-1 text-xs text-red-500 dark:text-red-400">{error}</p>
-          )}
+          {error && <p className="mt-1 text-xs text-error">{error}</p>}
         </div>
       )}
     </div>

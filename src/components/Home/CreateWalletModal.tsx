@@ -74,7 +74,7 @@ export function CreateWalletModal({
               // eslint-disable-next-line jsx-a11y/no-autofocus
               autoFocus
             />
-            {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
+            {error && <p className="mt-2 text-sm text-error">{error}</p>}
           </div>
 
           <div className="flex gap-3 justify-end">

@@ -200,12 +200,12 @@ export function BudgetTable({
         <div className="flex-grow overflow-auto pb-20 px-2">
           <div className="flex flex-col">
             <div className="flex px-2 py-1.5 text-xs font-semibold text-text-secondary uppercase tracking-wider border-b border-border">
-              <div className="w-8"></div>
+              <div className="w-10"></div>
               <div className="w-6 text-center flex-shrink-0">#</div>
               <div className="flex-grow pl-2">Name</div>
               <div className="w-8 text-center">Type</div>
               <div className="w-20 sm:w-24 text-right">Amount</div>
-              <div className="w-16"></div>
+              <div className="w-20"></div>
             </div>
             <div className="animate-pulse flex flex-col mt-2">
               <p className="sr-only">Loading budget items...</p>
@@ -214,7 +214,7 @@ export function BudgetTable({
                   key={i}
                   className="flex items-center px-2 py-3 border-b border-border"
                 >
-                  <div className="w-8"></div>
+                  <div className="w-10"></div>
                   <div className="w-6"></div>
                   <div className="flex-grow pl-2">
                     <div className="h-5 bg-bg-secondary rounded w-3/4"></div>
@@ -225,7 +225,7 @@ export function BudgetTable({
                   <div className="w-20 sm:w-24 pl-2">
                     <div className="h-5 bg-bg-secondary rounded w-full"></div>
                   </div>
-                  <div className="w-16"></div>
+                  <div className="w-20"></div>
                 </div>
               ))}
             </div>
@@ -263,12 +263,12 @@ export function BudgetTable({
         ) : (
           <div className="flex flex-col">
             <div className="flex px-2 py-1.5 text-xs font-semibold text-text-secondary uppercase tracking-wider border-b border-border">
-              <div className="w-8"></div>
+              <div className="w-10"></div>
               <div className="w-6 text-center flex-shrink-0">#</div>
               <div className="flex-grow pl-2">Name</div>
               <div className="w-8 text-center">Type</div>
               <div className="w-20 sm:w-24 text-right">Amount</div>
-              <div className="w-16"></div>
+              <div className="w-20"></div>
             </div>
             {items.length > 0 && typeHintVisible && (
               <div className="flex items-center gap-2 px-3 py-2 mb-2 mt-2 text-xs text-accent bg-accent/5 rounded-lg mx-2">

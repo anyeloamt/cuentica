@@ -10,12 +10,11 @@ import { sharePdf } from '../../lib/share';
 
 import { BudgetTable } from './BudgetTable';
 
-const baseActionButtonClassName =
-  'flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer';
+const iconActionButtonClassName =
+  'flex items-center justify-center h-9 w-9 rounded-lg border border-border bg-bg-secondary text-text-secondary hover:border-accent hover:text-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer';
 
-const secondaryActionButtonClassName = `${baseActionButtonClassName} border border-border bg-bg-secondary text-text-secondary hover:border-accent hover:text-accent`;
-
-const primaryActionButtonClassName = `${baseActionButtonClassName} bg-accent text-white hover:bg-accent/90`;
+const primaryActionButtonClassName =
+  'flex items-center justify-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer bg-accent text-white hover:bg-accent/90';
 
 export function WalletDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
@@ -60,14 +59,14 @@ export function WalletDetailPage(): JSX.Element {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex justify-end gap-2 px-2 pt-1">
+      <div className="flex items-center justify-end gap-2 px-2 pt-2 pb-1">
         <button
           type="button"
           onClick={() => {
             void handleCopy();
           }}
           disabled={!canCopy}
-          className={secondaryActionButtonClassName}
+          className={iconActionButtonClassName}
           aria-label="Copy items"
           title="Copy items"
         >
@@ -86,14 +85,13 @@ export function WalletDetailPage(): JSX.Element {
               d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125H4.125A1.125 1.125 0 0 1 3 20.625V8.625c0-.621.504-1.125 1.125-1.125H7.5m8.25 9.75h4.125c.621 0 1.125-.504 1.125-1.125V4.125A1.125 1.125 0 0 0 19.875 3H9.375C8.754 3 8.25 3.504 8.25 4.125V7.5"
             />
           </svg>
-          <span>Copy</span>
         </button>
         <button
           type="button"
           onClick={() => {
             void handlePaste();
           }}
-          className={secondaryActionButtonClassName}
+          className={iconActionButtonClassName}
           aria-label="Paste items"
           title="Paste items"
         >
@@ -112,7 +110,6 @@ export function WalletDetailPage(): JSX.Element {
               d="M9 5.25h6m-6 3h6m-9 9h12a2.25 2.25 0 0 0 2.25-2.25V5.625A2.625 2.625 0 0 0 17.625 3H15A2.25 2.25 0 0 0 12.75.75h-1.5A2.25 2.25 0 0 0 9 3H6.375A2.625 2.625 0 0 0 3.75 5.625V15A2.25 2.25 0 0 0 6 17.25Z"
             />
           </svg>
-          <span>Paste</span>
         </button>
         <button
           type="button"

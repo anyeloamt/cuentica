@@ -63,12 +63,12 @@ describe('App', () => {
 
   it('renders HomePage at /', () => {
     renderApp(['/']);
-    expect(screen.getByText(/no wallets yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/ready to start budgeting\?/i)).toBeInTheDocument();
   });
 
   it('renders WalletDetailPage at /wallet/:id', () => {
     renderApp(['/wallet/abc']);
-    expect(screen.getByText(/no items yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/your budget starts here/i)).toBeInTheDocument();
   });
 
   it('renders NotFoundPage at /nonexistent', () => {

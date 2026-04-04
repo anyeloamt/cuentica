@@ -35,8 +35,10 @@ describe('WalletList', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByText(/no wallets yet/i)).toBeInTheDocument();
-    expect(screen.getByText(/tap \+ to create your first wallet/i)).toBeInTheDocument();
+    expect(screen.getByText(/ready to start budgeting\?/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/create your first wallet with the \+ button below/i)
+    ).toBeInTheDocument();
   });
 
   it('renders wallet links for wallets with ids', () => {

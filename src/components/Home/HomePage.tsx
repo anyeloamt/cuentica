@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { useWallets } from '../../hooks/useWallets';
+import { useToast } from '../../context/ToastContext';
 import type { Wallet } from '../../types';
 
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
@@ -15,12 +16,24 @@ export function HomePage(): JSX.Element {
   const { wallets, createWallet, deleteWallet, renameWallet, reorderWallets } =
     useWallets();
   const [cachedWallets, setCachedWallets] = useState<Wallet[] | undefined>(undefined);
+  const { showToast } = useToast();
 
   useEffect(() => {
     if (wallets !== undefined) {
       setCachedWallets(wallets);
     }
   }, [wallets]);
+
+  const handleCreateWallet = useCallback(
+    async (name: string) => {
+      const result = await createWallet(name);
+      if (result.ok) {
+        showToast({ type: 'success', message: 'Wallet created!' });
+      }
+      return result;
+    },
+    [createWallet, showToast]
+  );
 
   const handleConfirmDelete = useCallback(async () => {
     if (!walletToDelete || !walletToDelete.id) return;
@@ -63,7 +76,7 @@ export function HomePage(): JSX.Element {
         <CreateWalletModal
           isOpen={isCreateModalOpen}
           onClose={handleCloseCreateModal}
-          createWallet={createWallet}
+          createWallet={handleCreateWallet}
         />
       )}
       <ConfirmDeleteModal

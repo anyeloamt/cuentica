@@ -35,7 +35,7 @@ export function ConfirmDeleteModal({
       >
         <h2
           id="delete-wallet-title"
-          className="text-xl font-heading font-bold text-text-primary"
+          className="text-xl font-bold text-text-primary"
         >
           Delete {walletName}?
         </h2>

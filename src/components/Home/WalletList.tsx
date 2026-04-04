@@ -341,7 +341,7 @@ function WalletListComponent({
           />
         </svg>
         <div>
-          <p className="text-lg font-heading font-semibold text-text-primary mb-1">
+          <p className="text-lg font-semibold text-text-primary mb-1">
             Ready to start budgeting?
           </p>
           <p>Create your first wallet with the + button below</p>

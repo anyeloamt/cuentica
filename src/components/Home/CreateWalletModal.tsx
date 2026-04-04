@@ -55,7 +55,7 @@ export function CreateWalletModal({
       >
         <h2
           id="create-wallet-title"
-          className="text-xl font-heading font-bold text-text-primary"
+          className="text-xl font-bold text-text-primary"
         >
           New Wallet
         </h2>

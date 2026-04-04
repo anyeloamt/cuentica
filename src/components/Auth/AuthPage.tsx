@@ -146,7 +146,7 @@ export function AuthPage(): JSX.Element {
         Back to app
       </Link>
 
-      <h1 className="text-2xl font-heading font-bold mb-2">Sign in to Cuentica</h1>
+      <h1 className="text-2xl font-bold mb-2">Sign in to Cuentica</h1>
       <p className="text-text-secondary mb-8">
         Sync your wallets and budget data across all your devices.
       </p>

@@ -25,7 +25,6 @@
   --color-income-light: var(--income-light);
   --color-expense: var(--expense);
   --color-expense-light: var(--expense-light);
-  --font-heading: 'Fraunces', Georgia, serif;
 }
 
 :root {

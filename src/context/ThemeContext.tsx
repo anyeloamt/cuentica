@@ -32,7 +32,7 @@ export function ThemeProvider({ children }: { children: ReactNode }): JSX.Elemen
 
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
     if (metaThemeColor) {
-      metaThemeColor.setAttribute('content', theme === 'dark' ? '#1a1a2e' : '#ffffff');
+      metaThemeColor.setAttribute('content', theme === 'dark' ? '#1a1410' : '#fdf8f3');
     }
   }, [theme]);
 

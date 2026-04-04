@@ -151,9 +151,7 @@ function BudgetRowComponent({
       ref={setNodeRef}
       style={style}
       className={`flex items-center gap-1 py-1.5 border-b border-border bg-bg-primary ${
-        item.type === '+'
-          ? 'border-l-4 border-l-green-500'
-          : 'border-l-4 border-l-red-500'
+        item.type === '+' ? 'border-l-4 border-l-income' : 'border-l-4 border-l-expense'
       } ${isDragging ? 'shadow-lg' : ''}`}
       role="row"
     >
@@ -201,8 +199,8 @@ function BudgetRowComponent({
         onClick={toggleType}
         className={`h-7 w-7 flex items-center justify-center rounded-full text-sm font-semibold transition-colors ${
           item.type === '+'
-            ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
-            : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
+            ? 'bg-income-light text-income'
+            : 'bg-expense-light text-expense'
         }`}
         aria-label={`Toggle type, currently ${item.type === '+' ? 'income' : 'expense'}`}
         title={item.type === '+' ? 'Income — tap to switch' : 'Expense — tap to switch'}

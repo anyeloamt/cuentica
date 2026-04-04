@@ -19,10 +19,13 @@ export type ReorderWalletResult =
   | { ok: true }
   | { ok: false; error: 'not-found' | 'already-at-edge' | 'db-error' };
 
+export type RestoreWalletResult = { ok: true } | { ok: false; error: 'db-error' };
+
 export function useWallets(): {
   wallets: Wallet[] | undefined;
   createWallet: (name: string) => Promise<CreateWalletResult>;
   deleteWallet: (id: string) => Promise<DeleteWalletResult>;
+  restoreWallet: (id: string) => Promise<RestoreWalletResult>;
   renameWallet: (id: string, name: string) => Promise<RenameWalletResult>;
   reorderWallet: (id: string, direction: 'up' | 'down') => Promise<ReorderWalletResult>;
   reorderWallets: (
@@ -83,6 +86,28 @@ export function useWallets(): {
         return { ok: true };
       });
     } catch (error) {
+      return { ok: false, error: 'db-error' };
+    }
+  };
+
+  const restoreWallet = async (id: string): Promise<RestoreWalletResult> => {
+    try {
+      await db.transaction('rw', db.wallets, db.budgetItems, async () => {
+        const timestamp = Date.now();
+
+        await db.wallets.update(id, {
+          deleted: false,
+          syncStatus: 'pending',
+          updatedAt: timestamp,
+        });
+        await db.budgetItems.where({ walletId: id }).modify({
+          deleted: false,
+          syncStatus: 'pending',
+          updatedAt: timestamp,
+        });
+      });
+      return { ok: true };
+    } catch {
       return { ok: false, error: 'db-error' };
     }
   };
@@ -183,6 +208,7 @@ export function useWallets(): {
     wallets,
     createWallet,
     deleteWallet,
+    restoreWallet,
     renameWallet,
     reorderWallet,
     reorderWallets,

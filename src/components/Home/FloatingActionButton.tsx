@@ -12,7 +12,7 @@ export function FloatingActionButton({
       type="button"
       aria-label={label}
       onClick={onClick}
-      className="fixed bottom-6 right-6 w-14 h-14 bg-accent text-white rounded-full shadow-lg flex items-center justify-center hover:bg-accent/90 focus:outline-none focus:ring-4 focus:ring-accent/50 active:scale-95 transition-transform z-50"
+      className="fixed bottom-6 right-6 h-12 bg-accent text-white rounded-full shadow-lg flex items-center gap-2 px-5 hover:bg-accent/90 focus:outline-none focus:ring-4 focus:ring-accent/50 active:scale-95 transition-transform z-50"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -20,10 +20,11 @@ export function FloatingActionButton({
         viewBox="0 0 24 24"
         strokeWidth={2}
         stroke="currentColor"
-        className="w-7 h-7"
+        className="w-5 h-5"
       >
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
       </svg>
+      <span className="text-sm font-semibold">{label}</span>
     </button>
   );
 }

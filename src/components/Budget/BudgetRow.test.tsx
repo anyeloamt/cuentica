@@ -37,14 +37,14 @@ describe('BudgetRow', () => {
     );
     expect(screen.getByLabelText('Item name')).toHaveValue('Rent');
     expect(screen.getByLabelText('Amount')).toHaveValue(1000);
-    expect(screen.getByLabelText('Toggle type, currently -')).toBeInTheDocument();
+    expect(screen.getByLabelText('Toggle type, currently expense')).toBeInTheDocument();
   });
 
   it('toggles type immediately', () => {
     render(
       <BudgetRow item={item} rowNumber={1} onUpdate={mockUpdate} onDelete={mockDelete} />
     );
-    const toggleBtn = screen.getByLabelText('Toggle type, currently -');
+    const toggleBtn = screen.getByLabelText('Toggle type, currently expense');
     fireEvent.click(toggleBtn);
     expect(mockUpdate).toHaveBeenCalledWith('i1', { type: '+' });
   });

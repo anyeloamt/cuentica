@@ -204,7 +204,8 @@ function BudgetRowComponent({
             ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
             : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
         }`}
-        aria-label={`Toggle type, currently ${item.type}`}
+        aria-label={`Toggle type, currently ${item.type === '+' ? 'income' : 'expense'}`}
+        title={item.type === '+' ? 'Income — tap to switch' : 'Expense — tap to switch'}
       >
         {item.type}
       </button>

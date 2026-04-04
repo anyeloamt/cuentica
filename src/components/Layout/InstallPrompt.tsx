@@ -1,15 +1,19 @@
 interface InstallPromptProps {
   isInstallable: boolean;
   isInstalled: boolean;
+  isDismissed: boolean;
   onInstall: () => Promise<void>;
+  onDismiss: () => void;
 }
 
 export function InstallPrompt({
   isInstallable,
   isInstalled,
+  isDismissed,
   onInstall,
+  onDismiss,
 }: InstallPromptProps): JSX.Element | null {
-  if (isInstalled || !isInstallable) {
+  if (isInstalled || !isInstallable || isDismissed) {
     return null;
   }
 
@@ -28,6 +32,13 @@ export function InstallPrompt({
           onClick={() => void onInstall()}
         >
           Install app
+        </button>
+        <button
+          type="button"
+          className="pwa-prompt__action-secondary"
+          onClick={onDismiss}
+        >
+          Dismiss
         </button>
       </div>
     </div>

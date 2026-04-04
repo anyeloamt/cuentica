@@ -13,7 +13,19 @@ export interface DeferredInstallPromptEvent extends Event {
 interface UseInstallPromptResult {
   isInstallable: boolean;
   isInstalled: boolean;
+  isDismissed: boolean;
   promptInstall: () => Promise<void>;
+  dismiss: () => void;
+}
+
+const INSTALL_PROMPT_DISMISS_KEY = 'install-prompt-dismissed';
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+
+function isDismissedInStorage(): boolean {
+  const dismissedAt = localStorage.getItem(INSTALL_PROMPT_DISMISS_KEY);
+  if (!dismissedAt) return false;
+  const dismissedTime = parseInt(dismissedAt, 10);
+  return Date.now() - dismissedTime < THIRTY_DAYS_MS;
 }
 
 function isDeferredInstallPromptEvent(event: Event): event is DeferredInstallPromptEvent {
@@ -25,6 +37,7 @@ export function useInstallPrompt(): UseInstallPromptResult {
     null
   );
   const [isInstalled, setIsInstalled] = useState(false);
+  const [isDismissed, setIsDismissed] = useState(() => isDismissedInStorage());
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (event: Event): void => {
@@ -67,9 +80,16 @@ export function useInstallPrompt(): UseInstallPromptResult {
     }
   }, [deferredPrompt]);
 
+  const dismiss = useCallback((): void => {
+    localStorage.setItem(INSTALL_PROMPT_DISMISS_KEY, Date.now().toString());
+    setIsDismissed(true);
+  }, []);
+
   return {
     isInstallable: deferredPrompt !== null,
     isInstalled,
+    isDismissed,
     promptInstall,
+    dismiss,
   };
 }

@@ -171,6 +171,15 @@ The `/plan` step (Step 5 in work-issue) is **optional** at the orchestrator's di
 
 When skipping, the orchestrator must still provide equivalent context in the implementation delegation prompt (acceptance criteria, technical constraints, affected files).
 
+## Design Context
+
+### Intentional Design Decisions (Do Not Flag)
+
+These choices are deliberate. Design review tools (`/critique`, `/arrange`, `/adapt`) must not flag them as issues.
+
+- **Compact budget rows**: The budget table uses tight row spacing (`py-1.5`), small action buttons (`h-8 w-8` / 32px), and a dense 6-element layout. This is intentional — the table is designed to feel like a spreadsheet, maximizing visible rows. Do not increase touch targets, row padding, or button sizes.
+- **Equal-weight action buttons**: Copy, Paste, and Export PDF share the same visual weight in the toolbar. This is by design — the toolbar is compact and secondary to the table content.
+
 ## Key References
 
 - `PRD.md` — Full product requirements

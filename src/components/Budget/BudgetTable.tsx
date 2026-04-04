@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -27,12 +27,13 @@ import { BudgetRow } from './BudgetRow';
 type AddItemsResult = { ok: true; ids: string[] } | { ok: false; error: string };
 type TrimResult = { ok: true; count: number } | { ok: false; error: string };
 type InsertBelowResult = { ok: true; id: string } | { ok: false; error: string };
+type UpdateItemResult = { ok: boolean; error?: string };
 
 interface BudgetTableProps {
   items: BudgetItem[] | undefined;
   onAddItems: () => Promise<AddItemsResult>;
   onTrimRows: () => Promise<TrimResult>;
-  onUpdateItem: (id: string, changes: Partial<BudgetItem>) => void;
+  onUpdateItem: (id: string, changes: Partial<BudgetItem>) => Promise<UpdateItemResult>;
   onDeleteItem: (id: string) => Promise<{ ok: boolean }>;
   onInsertBelow: (id: string) => Promise<InsertBelowResult>;
   onRestoreItem?: (item: BudgetItem) => Promise<{ ok: boolean }>;
@@ -51,6 +52,8 @@ export function BudgetTable({
 }: BudgetTableProps) {
   const [deletedItems, setDeletedItems] = useState<BudgetItem[]>([]);
   const [lastAddedId, setLastAddedId] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { showToast } = useToast();
   const { visible: typeHintVisible, dismiss: dismissTypeHint } = useHint('type-toggle');
 
@@ -82,6 +85,14 @@ export function BudgetTable({
 
     return () => clearTimeout(timer);
   }, [deletedItems]);
+
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
@@ -149,6 +160,32 @@ export function BudgetTable({
       showToast({ type: 'error', message: 'Failed to insert row' });
     },
     [onInsertBelow, showToast]
+  );
+
+  const handleUpdateItem = useCallback(
+    async (id: string, changes: Partial<BudgetItem>): Promise<UpdateItemResult> => {
+      setSaveStatus('saving');
+
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
+
+      const result = await onUpdateItem(id, changes);
+
+      if (result.ok) {
+        setSaveStatus('saved');
+        saveTimerRef.current = setTimeout(() => {
+          setSaveStatus('idle');
+          saveTimerRef.current = null;
+        }, 2000);
+      } else {
+        setSaveStatus('idle');
+      }
+
+      return result;
+    },
+    [onUpdateItem]
   );
 
   const handleUndo = useCallback(async () => {
@@ -329,7 +366,7 @@ export function BudgetTable({
                     key={item.id}
                     item={item}
                     rowNumber={index + 1}
-                    onUpdate={onUpdateItem}
+                    onUpdate={handleUpdateItem}
                     onDelete={handleDeleteWithUndo}
                     onInsertBelow={(id) => {
                       void handleInsertBelow(id);
@@ -407,6 +444,16 @@ export function BudgetTable({
           <div className="flex w-full sm:w-auto justify-between sm:justify-start gap-4">
             <span className="text-income">↑ +{formatAmount(income)}</span>
             <span className="text-expense">↓ -{formatAmount(expenses)}</span>
+          </div>
+
+          <div
+            className={`text-xs text-text-muted transition-opacity duration-200 ${
+              saveStatus === 'idle' ? 'opacity-0' : 'opacity-100'
+            }`}
+            aria-live="polite"
+          >
+            {saveStatus === 'saving' ? <span>Saving...</span> : null}
+            {saveStatus === 'saved' ? <span>Saved ✓</span> : null}
           </div>
 
           <div className="flex w-full sm:w-auto justify-between sm:justify-end gap-2 border-t sm:border-t-0 border-border pt-2 sm:pt-0">

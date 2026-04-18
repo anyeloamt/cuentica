@@ -44,6 +44,54 @@ export interface SupabaseBudgetItemRow {
 
 export type MigrationMode = 'skipped-empty' | 'pushed' | 'pulled';
 
+/**
+ * Converts decimal currency amount to integer cents for Supabase storage.
+ * @param value - Decimal currency value (e.g., 10.99 for $10.99)
+ * @returns Integer cents (e.g., 1099)
+ * @remarks Values with more than 2 decimal places are rounded to the nearest cent (e.g., 0.015 → 2 cents). This is acceptable for standard currency handling.
+ */
+export const toSupabaseAmountCents = (value: number): number => {
+  if (!Number.isFinite(value)) {
+    throw new Error('Invalid local amount value');
+  }
+
+  return Math.round(value * 100);
+};
+
+/**
+ * Converts integer cents from Supabase to decimal currency amount.
+ * @param value - Integer cents (e.g., 1099)
+ * @returns Decimal currency value (e.g., 10.99 for $10.99)
+ * @remarks Assumes Supabase stores integer cents. Returns decimal currency value (cents ÷ 100).
+ */
+export const toLocalAmountFromCents = (value: number): number => {
+  if (!Number.isFinite(value)) {
+    throw new Error('Invalid remote amount value');
+  }
+
+  return value / 100;
+};
+
+const LEGACY_AMOUNT_THRESHOLD = 1_000_000;
+
+export const toLocalAmountDuringTransition = (value: number | string): number => {
+  const parsed = typeof value === 'number' ? value : Number.parseFloat(value);
+
+  if (!Number.isFinite(parsed)) {
+    throw new Error('Invalid remote amount value');
+  }
+
+  const isLegacyDecimalString = typeof value === 'string' && value.includes('.');
+  const isLegacyDecimalNumber = !Number.isInteger(parsed);
+  const isLegacyLargeValue = Math.abs(parsed) > LEGACY_AMOUNT_THRESHOLD;
+
+  if (isLegacyDecimalString || isLegacyDecimalNumber || isLegacyLargeValue) {
+    return parsed;
+  }
+
+  return toLocalAmountFromCents(parsed);
+};
+
 export const toSupabaseWallet = (
   wallet: WalletWithId,
   userId: string
@@ -70,7 +118,7 @@ export const toSupabaseBudgetItem = (
   order: budgetItem.order,
   name: budgetItem.name,
   type: budgetItem.type,
-  amount: budgetItem.amount,
+  amount: toSupabaseAmountCents(budgetItem.amount),
   date: budgetItem.date ?? null,
   category_tag: budgetItem.categoryTag ?? null,
   created_at: budgetItem.createdAt,
@@ -100,14 +148,11 @@ export const toLocalBudgetItem = (
   name: budgetItem.name,
   type: budgetItem.type,
   amount: (() => {
-    const parsed =
-      typeof budgetItem.amount === 'number'
-        ? budgetItem.amount
-        : Number.parseFloat(budgetItem.amount);
-    if (!Number.isFinite(parsed)) {
+    try {
+      return toLocalAmountDuringTransition(budgetItem.amount);
+    } catch {
       throw new Error(`Invalid amount value for budget item ${budgetItem.id}`);
     }
-    return parsed;
   })(),
   date: budgetItem.date ?? undefined,
   categoryTag: budgetItem.category_tag ?? undefined,

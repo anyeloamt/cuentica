@@ -20,7 +20,7 @@ create table if not exists public.budget_items (
   "order" integer not null,
   name text not null,
   type text not null check (type in ('+', '-')),
-  amount integer not null,  -- Stored as cents (integer) to avoid floating point issues
+  amount numeric(12, 2) not null,
   date text,
   category_tag text,
   created_at bigint not null,

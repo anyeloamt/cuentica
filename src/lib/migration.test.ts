@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   toLocalAmountFromCents,
+  toLocalAmountDuringTransition,
   toLocalBudgetItem,
   toSupabaseAmountCents,
   toSupabaseBudgetItem,
@@ -65,6 +66,17 @@ describe('migration amount conversion', () => {
     const restoredBudgetItem = toLocalBudgetItem(createSupabaseBudgetItem('481250'));
 
     expect(restoredBudgetItem.amount).toBe(4812.5);
+  });
+
+  it('preserves legacy decimal string amounts during the migration window', () => {
+    const restoredBudgetItem = toLocalBudgetItem(createSupabaseBudgetItem('4812.50'));
+
+    expect(restoredBudgetItem.amount).toBe(4812.5);
+  });
+
+  it('detects legacy large remote amounts and keeps them as-is', () => {
+    expect(toLocalAmountDuringTransition(1000001)).toBe(1000001);
+    expect(toLocalBudgetItem(createSupabaseBudgetItem(1000001)).amount).toBe(1000001);
   });
 
   it('rejects invalid local amount values', () => {

@@ -1,51 +1,51 @@
 # Breaking Changes - Issue #121
 
-## Storage Contract Change
+## Production Deployment Plan
 
-### Supabase Schema Migration
+This change must be deployed in a way that preserves all existing production data.
 
-**Old Schema:**
-```sql
-amount numeric(12, 2)  -- Decimal storage (e.g., 10.99)
-```
+### Production-Safe Sequence
 
-**New Schema:**
-```sql
-amount integer  -- Integer cents storage (e.g., 1099)
-```
+1. **Deploy the new application code first**
+   - The app can read both legacy `numeric(12,2)` amounts and new integer-cent amounts during the transition window.
+   - Existing users continue using the app without data loss.
 
-### Impact
+2. **Run `supabase/migrations/0002_amount_to_cents.sql`**
+   ```sql
+   alter table public.budget_items
+     alter column amount type integer
+     using round(amount * 100)::integer;
+   ```
+   - Existing `numeric(12,2)` production values are converted in place.
+   - No rows are deleted.
+   - Historical user data is preserved.
 
-- **Rounding Behavior**: Values with more than 2 decimal places are rounded to the nearest cent during sync
-  - Example: `0.015` → `2` cents (via `Math.round(value * 100)`)
-  - This is acceptable for standard currency handling as currencies don't use more than 2 decimals
+3. **Continue normal operation**
+   - After the SQL migration completes, all remote amounts are stored as integer cents.
+   - The deployed code remains compatible throughout the rollout.
 
-- **Data Transformation**:
-  - Local → Supabase: `toSupabaseAmountCents(value)` multiplies by 100 and rounds
-  - Supabase → Local: `toLocalAmountFromCents(value)` divides by 100
+## Compatibility Window
 
-### Migration Path
+- **Before SQL migration:** production rows may still be `numeric(12,2)`.
+- **After SQL migration:** rows are stored as integer cents.
+- The deployed app handles both formats so users do not experience downtime while the database migration is applied.
 
-For existing databases with the old schema:
+## Data Safety Guarantees
 
-**Option 1: Manual Reset**
-- Clear local IndexedDB and re-enter data
-- Suitable for development/early adopter phase
+- No table drops
+- No row deletes
+- No client-side data reset
+- No IndexedDB clearing requirement
+- Existing production data is transformed in place
 
-**Option 2: ALTER TABLE**
-```sql
-ALTER TABLE budget_items 
-  ALTER COLUMN amount TYPE integer 
-  USING ROUND(amount * 100)::integer;
-```
-- Converts existing decimal values to cents
-- Requires downtime during migration
+## Amount Conversion Rules
 
-### Functions Affected
+- Local → Supabase: `toSupabaseAmountCents(value)` multiplies by `100` and rounds to the nearest cent.
+- Supabase (cents) → Local: divide by `100`.
+- Supabase (legacy decimal rows during rollout) → Local: preserve the decimal value as-is.
 
-- `toSupabaseAmountCents(value: number): number` - Converts decimal to integer cents
-- `toLocalAmountFromCents(value: number): number` - Converts integer cents to decimal
+## Zero-Downtime Rollout Summary
 
-### Rationale
-
-Integer cents storage prevents floating-point precision issues and is the standard approach for currency handling in financial applications.
+1. Deploy code that supports both formats.
+2. Run the forward migration SQL.
+3. Users keep their data throughout the rollout.

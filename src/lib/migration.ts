@@ -72,6 +72,26 @@ export const toLocalAmountFromCents = (value: number): number => {
   return value / 100;
 };
 
+const LEGACY_AMOUNT_THRESHOLD = 1_000_000;
+
+export const toLocalAmountDuringTransition = (value: number | string): number => {
+  const parsed = typeof value === 'number' ? value : Number.parseFloat(value);
+
+  if (!Number.isFinite(parsed)) {
+    throw new Error('Invalid remote amount value');
+  }
+
+  const isLegacyDecimalString = typeof value === 'string' && value.includes('.');
+  const isLegacyDecimalNumber = !Number.isInteger(parsed);
+  const isLegacyLargeValue = Math.abs(parsed) > LEGACY_AMOUNT_THRESHOLD;
+
+  if (isLegacyDecimalString || isLegacyDecimalNumber || isLegacyLargeValue) {
+    return parsed;
+  }
+
+  return toLocalAmountFromCents(parsed);
+};
+
 export const toSupabaseWallet = (
   wallet: WalletWithId,
   userId: string
@@ -128,14 +148,11 @@ export const toLocalBudgetItem = (
   name: budgetItem.name,
   type: budgetItem.type,
   amount: (() => {
-    const parsed =
-      typeof budgetItem.amount === 'number'
-        ? budgetItem.amount
-        : Number.parseFloat(budgetItem.amount);
-    if (!Number.isFinite(parsed)) {
+    try {
+      return toLocalAmountDuringTransition(budgetItem.amount);
+    } catch {
       throw new Error(`Invalid amount value for budget item ${budgetItem.id}`);
     }
-    return toLocalAmountFromCents(parsed);
   })(),
   date: budgetItem.date ?? undefined,
   categoryTag: budgetItem.category_tag ?? undefined,

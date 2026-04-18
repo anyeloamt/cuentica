@@ -48,6 +48,7 @@ export type MigrationMode = 'skipped-empty' | 'pushed' | 'pulled';
  * Converts decimal currency amount to integer cents for Supabase storage.
  * @param value - Decimal currency value (e.g., 10.99 for $10.99)
  * @returns Integer cents (e.g., 1099)
+ * @remarks Values with more than 2 decimal places are rounded to the nearest cent (e.g., 0.015 → 2 cents). This is acceptable for standard currency handling.
  */
 export const toSupabaseAmountCents = (value: number): number => {
   if (!Number.isFinite(value)) {
@@ -61,6 +62,7 @@ export const toSupabaseAmountCents = (value: number): number => {
  * Converts integer cents from Supabase to decimal currency amount.
  * @param value - Integer cents (e.g., 1099)
  * @returns Decimal currency value (e.g., 10.99 for $10.99)
+ * @remarks Assumes Supabase stores integer cents. Returns decimal currency value (cents ÷ 100).
  */
 export const toLocalAmountFromCents = (value: number): number => {
   if (!Number.isFinite(value)) {

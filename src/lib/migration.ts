@@ -44,6 +44,11 @@ export interface SupabaseBudgetItemRow {
 
 export type MigrationMode = 'skipped-empty' | 'pushed' | 'pulled';
 
+/**
+ * Converts decimal currency amount to integer cents for Supabase storage.
+ * @param value - Decimal currency value (e.g., 10.99 for $10.99)
+ * @returns Integer cents (e.g., 1099)
+ */
 export const toSupabaseAmountCents = (value: number): number => {
   if (!Number.isFinite(value)) {
     throw new Error('Invalid local amount value');
@@ -52,6 +57,11 @@ export const toSupabaseAmountCents = (value: number): number => {
   return Math.round(value * 100);
 };
 
+/**
+ * Converts integer cents from Supabase to decimal currency amount.
+ * @param value - Integer cents (e.g., 1099)
+ * @returns Decimal currency value (e.g., 10.99 for $10.99)
+ */
 export const toLocalAmountFromCents = (value: number): number => {
   if (!Number.isFinite(value)) {
     throw new Error('Invalid remote amount value');

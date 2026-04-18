@@ -44,6 +44,22 @@ export interface SupabaseBudgetItemRow {
 
 export type MigrationMode = 'skipped-empty' | 'pushed' | 'pulled';
 
+export const toSupabaseAmountCents = (value: number): number => {
+  if (!Number.isFinite(value)) {
+    throw new Error('Invalid local amount value');
+  }
+
+  return Math.round(value * 100);
+};
+
+export const toLocalAmountFromCents = (value: number): number => {
+  if (!Number.isFinite(value)) {
+    throw new Error('Invalid remote amount value');
+  }
+
+  return value / 100;
+};
+
 export const toSupabaseWallet = (
   wallet: WalletWithId,
   userId: string
@@ -70,7 +86,7 @@ export const toSupabaseBudgetItem = (
   order: budgetItem.order,
   name: budgetItem.name,
   type: budgetItem.type,
-  amount: budgetItem.amount,
+  amount: toSupabaseAmountCents(budgetItem.amount),
   date: budgetItem.date ?? null,
   category_tag: budgetItem.categoryTag ?? null,
   created_at: budgetItem.createdAt,
@@ -107,7 +123,7 @@ export const toLocalBudgetItem = (
     if (!Number.isFinite(parsed)) {
       throw new Error(`Invalid amount value for budget item ${budgetItem.id}`);
     }
-    return parsed;
+    return toLocalAmountFromCents(parsed);
   })(),
   date: budgetItem.date ?? undefined,
   categoryTag: budgetItem.category_tag ?? undefined,

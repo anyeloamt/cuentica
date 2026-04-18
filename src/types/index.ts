@@ -18,6 +18,7 @@ export interface BudgetItem extends SyncableEntity {
   order: number;
   name: string;
   type: '+' | '-';
+  // Local app stores decimal currency units; Supabase persists integer cents.
   amount: number;
   date?: string;
   categoryTag?: string;

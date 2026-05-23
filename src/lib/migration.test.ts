@@ -74,9 +74,10 @@ describe('migration amount conversion', () => {
     expect(restoredBudgetItem.amount).toBe(4812.5);
   });
 
-  it('detects legacy large remote amounts and keeps them as-is', () => {
-    expect(toLocalAmountDuringTransition(1000001)).toBe(1000001);
-    expect(toLocalBudgetItem(createSupabaseBudgetItem(1000001)).amount).toBe(1000001);
+  it('converts large integer cent values back to local decimal amounts', () => {
+    expect(toSupabaseAmountCents(25000000)).toBe(2500000000);
+    expect(toLocalAmountDuringTransition(2500000000)).toBe(25000000);
+    expect(toLocalBudgetItem(createSupabaseBudgetItem(2500000000)).amount).toBe(25000000);
   });
 
   it('rejects invalid local amount values', () => {

@@ -72,8 +72,6 @@ export const toLocalAmountFromCents = (value: number): number => {
   return value / 100;
 };
 
-const LEGACY_AMOUNT_THRESHOLD = 1_000_000;
-
 export const toLocalAmountDuringTransition = (value: number | string): number => {
   const parsed = typeof value === 'number' ? value : Number.parseFloat(value);
 
@@ -83,9 +81,8 @@ export const toLocalAmountDuringTransition = (value: number | string): number =>
 
   const isLegacyDecimalString = typeof value === 'string' && value.includes('.');
   const isLegacyDecimalNumber = !Number.isInteger(parsed);
-  const isLegacyLargeValue = Math.abs(parsed) > LEGACY_AMOUNT_THRESHOLD;
 
-  if (isLegacyDecimalString || isLegacyDecimalNumber || isLegacyLargeValue) {
+  if (isLegacyDecimalString || isLegacyDecimalNumber) {
     return parsed;
   }
 

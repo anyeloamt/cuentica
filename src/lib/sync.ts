@@ -1,3 +1,5 @@
+import type { BudgetItem, Wallet } from '../types';
+
 import { db } from './db';
 import {
   toLocalBudgetItem,
@@ -10,6 +12,7 @@ import {
 import { supabase } from './supabase';
 
 const SYNC_BATCH_SIZE = 100;
+const PULL_CHECKPOINT_OVERLAP_MS = 24 * 60 * 60 * 1000;
 
 const getLastSyncStorageKey = (userId: string): string => `cuentica-sync-ts-${userId}`;
 
@@ -30,6 +33,62 @@ const chunk = <T>(input: T[], size: number): T[][] => {
     chunks.push(input.slice(index, index + size));
   }
   return chunks;
+};
+
+const maxLocalUpdatedAt = (
+  wallets: (Wallet & { id: string })[],
+  budgetItems: (BudgetItem & { id: string })[]
+): number | null => {
+  const timestamps = [
+    ...wallets.map((wallet) => wallet.updatedAt),
+    ...budgetItems.map((item) => item.updatedAt),
+  ];
+
+  if (timestamps.length === 0) {
+    return null;
+  }
+
+  return Math.max(...timestamps);
+};
+
+const withoutPendingLocalWallets = async (
+  wallets: (Wallet & { id: string })[]
+): Promise<(Wallet & { id: string })[]> => {
+  if (wallets.length === 0) {
+    return wallets;
+  }
+
+  const localWallets = await db.wallets
+    .where('id')
+    .anyOf(wallets.map((wallet) => wallet.id))
+    .toArray();
+  const pendingLocalIds = new Set(
+    localWallets
+      .filter((wallet) => wallet.syncStatus === 'pending' && hasId(wallet))
+      .map((wallet) => wallet.id)
+  );
+
+  return wallets.filter((wallet) => !pendingLocalIds.has(wallet.id));
+};
+
+const withoutPendingLocalBudgetItems = async (
+  budgetItems: (BudgetItem & { id: string })[]
+): Promise<(BudgetItem & { id: string })[]> => {
+  if (budgetItems.length === 0) {
+    return budgetItems;
+  }
+
+  const localBudgetItems = await db.budgetItems
+    .where('id')
+    .anyOf(budgetItems.map((item) => item.id))
+    .toArray();
+  const pendingLocalIds = new Set(
+    localBudgetItems
+      .filter((item) => item.syncStatus === 'pending' && hasId(item))
+      .map((item) => item.id)
+  );
+
+  return budgetItems.filter((item) => !pendingLocalIds.has(item.id));
 };
 
 export async function syncPush(userId: string): Promise<void> {
@@ -108,6 +167,7 @@ export async function syncPull(userId: string): Promise<void> {
   const lastSyncTimestampRaw = localStorage.getItem(key);
   const parsed = Number.parseInt(lastSyncTimestampRaw ?? '0', 10);
   const lastSyncTimestamp = Number.isNaN(parsed) ? 0 : parsed;
+  const pullSinceTimestamp = Math.max(0, lastSyncTimestamp - PULL_CHECKPOINT_OVERLAP_MS);
 
   const [walletsResponse, budgetItemsResponse] = await Promise.all([
     client
@@ -116,14 +176,14 @@ export async function syncPull(userId: string): Promise<void> {
         'id,user_id,name,order,color,category_id,created_at,updated_at,sync_status,deleted'
       )
       .eq('user_id', userId)
-      .gt('updated_at', lastSyncTimestamp),
+      .gt('updated_at', pullSinceTimestamp),
     client
       .from('budget_items')
       .select(
         'id,user_id,wallet_id,order,name,type,amount,date,category_tag,created_at,updated_at,sync_status,deleted'
       )
       .eq('user_id', userId)
-      .gt('updated_at', lastSyncTimestamp),
+      .gt('updated_at', pullSinceTimestamp),
   ]);
 
   if (walletsResponse.error) {
@@ -134,24 +194,32 @@ export async function syncPull(userId: string): Promise<void> {
     throw new Error(budgetItemsResponse.error.message);
   }
 
-  const wallets = (walletsResponse.data ?? []).map((wallet) =>
+  const remoteWallets = (walletsResponse.data ?? []) as SupabaseWalletRow[];
+  const remoteBudgetItems = (budgetItemsResponse.data ?? []) as SupabaseBudgetItemRow[];
+
+  const wallets = remoteWallets.map((wallet) =>
     toLocalWallet(wallet as SupabaseWalletRow)
   );
-  const budgetItems = (budgetItemsResponse.data ?? []).map((item) =>
+  const budgetItems = remoteBudgetItems.map((item) =>
     toLocalBudgetItem(item as SupabaseBudgetItemRow)
   );
+  const walletsToStore = await withoutPendingLocalWallets(wallets);
+  const budgetItemsToStore = await withoutPendingLocalBudgetItems(budgetItems);
+  const nextCheckpoint = maxLocalUpdatedAt(walletsToStore, budgetItemsToStore);
 
   await db.transaction('rw', db.wallets, db.budgetItems, async () => {
-    if (wallets.length > 0) {
-      await db.wallets.bulkPut(wallets);
+    if (walletsToStore.length > 0) {
+      await db.wallets.bulkPut(walletsToStore);
     }
 
-    if (budgetItems.length > 0) {
-      await db.budgetItems.bulkPut(budgetItems);
+    if (budgetItemsToStore.length > 0) {
+      await db.budgetItems.bulkPut(budgetItemsToStore);
     }
   });
 
-  localStorage.setItem(key, Date.now().toString());
+  if (nextCheckpoint !== null) {
+    localStorage.setItem(key, nextCheckpoint.toString());
+  }
 }
 
 export async function fullSync(userId: string): Promise<void> {

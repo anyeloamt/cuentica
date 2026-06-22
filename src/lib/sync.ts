@@ -15,6 +15,13 @@ const SYNC_BATCH_SIZE = 100;
 const PULL_CHECKPOINT_OVERLAP_MS = 24 * 60 * 60 * 1000;
 
 const getLastSyncStorageKey = (userId: string): string => `cuentica-sync-ts-${userId}`;
+const getInitialCloudPullStorageKey = (userId: string): string =>
+  `cuentica-initial-cloud-pull-v2-${userId}`;
+
+const walletColumns =
+  'id,user_id,name,order,color,category_id,created_at,updated_at,sync_status,deleted';
+const budgetItemColumns =
+  'id,user_id,wallet_id,order,name,type,amount,date,category_tag,created_at,updated_at,sync_status,deleted';
 
 const assertSupabaseConfigured = (): NonNullable<typeof supabase> => {
   if (!supabase) {
@@ -91,6 +98,95 @@ const withoutPendingLocalBudgetItems = async (
   return budgetItems.filter((item) => !pendingLocalIds.has(item.id));
 };
 
+const pullRemoteRows = async (
+  userId: string,
+  pullSinceTimestamp: number | null
+): Promise<{
+  wallets: SupabaseWalletRow[];
+  budgetItems: SupabaseBudgetItemRow[];
+}> => {
+  const client = assertSupabaseConfigured();
+  const walletsQuery = client
+    .from('wallets')
+    .select(walletColumns)
+    .eq('user_id', userId);
+  const budgetItemsQuery = client
+    .from('budget_items')
+    .select(budgetItemColumns)
+    .eq('user_id', userId);
+
+  const [walletsResponse, budgetItemsResponse] = await Promise.all([
+    pullSinceTimestamp === null
+      ? walletsQuery
+      : walletsQuery.gt('updated_at', pullSinceTimestamp),
+    pullSinceTimestamp === null
+      ? budgetItemsQuery
+      : budgetItemsQuery.gt('updated_at', pullSinceTimestamp),
+  ]);
+
+  if (walletsResponse.error) {
+    throw new Error(walletsResponse.error.message);
+  }
+
+  if (budgetItemsResponse.error) {
+    throw new Error(budgetItemsResponse.error.message);
+  }
+
+  return {
+    wallets: (walletsResponse.data ?? []) as SupabaseWalletRow[],
+    budgetItems: (budgetItemsResponse.data ?? []) as SupabaseBudgetItemRow[],
+  };
+};
+
+const applyRemoteRows = async (
+  remoteWallets: SupabaseWalletRow[],
+  remoteBudgetItems: SupabaseBudgetItemRow[]
+): Promise<number | null> => {
+  const wallets = remoteWallets.map((wallet) => ({
+    ...toLocalWallet(wallet),
+    syncStatus: 'synced' as const,
+  }));
+  const budgetItems = remoteBudgetItems.map((item) => ({
+    ...toLocalBudgetItem(item),
+    syncStatus: 'synced' as const,
+  }));
+  const walletsToStore = await withoutPendingLocalWallets(wallets);
+  const budgetItemsToStore = await withoutPendingLocalBudgetItems(budgetItems);
+  const nextCheckpoint = maxLocalUpdatedAt(walletsToStore, budgetItemsToStore);
+
+  await db.transaction('rw', db.wallets, db.budgetItems, async () => {
+    if (walletsToStore.length > 0) {
+      await db.wallets.bulkPut(walletsToStore);
+    }
+
+    if (budgetItemsToStore.length > 0) {
+      await db.budgetItems.bulkPut(budgetItemsToStore);
+    }
+  });
+
+  return nextCheckpoint;
+};
+
+export async function syncHydrate(userId: string): Promise<void> {
+  const hydrationKey = getInitialCloudPullStorageKey(userId);
+
+  if (localStorage.getItem(hydrationKey) === 'done') {
+    return;
+  }
+
+  const remoteRows = await pullRemoteRows(userId, null);
+  const nextCheckpoint = await applyRemoteRows(
+    remoteRows.wallets,
+    remoteRows.budgetItems
+  );
+
+  if (nextCheckpoint !== null) {
+    localStorage.setItem(getLastSyncStorageKey(userId), nextCheckpoint.toString());
+  }
+
+  localStorage.setItem(hydrationKey, 'done');
+}
+
 export async function syncPush(userId: string): Promise<void> {
   const client = assertSupabaseConfigured();
   const [pendingWallets, pendingBudgetItems] = await Promise.all([
@@ -162,60 +258,16 @@ export async function syncPush(userId: string): Promise<void> {
 }
 
 export async function syncPull(userId: string): Promise<void> {
-  const client = assertSupabaseConfigured();
   const key = getLastSyncStorageKey(userId);
   const lastSyncTimestampRaw = localStorage.getItem(key);
   const parsed = Number.parseInt(lastSyncTimestampRaw ?? '0', 10);
   const lastSyncTimestamp = Number.isNaN(parsed) ? 0 : parsed;
   const pullSinceTimestamp = Math.max(0, lastSyncTimestamp - PULL_CHECKPOINT_OVERLAP_MS);
-
-  const [walletsResponse, budgetItemsResponse] = await Promise.all([
-    client
-      .from('wallets')
-      .select(
-        'id,user_id,name,order,color,category_id,created_at,updated_at,sync_status,deleted'
-      )
-      .eq('user_id', userId)
-      .gt('updated_at', pullSinceTimestamp),
-    client
-      .from('budget_items')
-      .select(
-        'id,user_id,wallet_id,order,name,type,amount,date,category_tag,created_at,updated_at,sync_status,deleted'
-      )
-      .eq('user_id', userId)
-      .gt('updated_at', pullSinceTimestamp),
-  ]);
-
-  if (walletsResponse.error) {
-    throw new Error(walletsResponse.error.message);
-  }
-
-  if (budgetItemsResponse.error) {
-    throw new Error(budgetItemsResponse.error.message);
-  }
-
-  const remoteWallets = (walletsResponse.data ?? []) as SupabaseWalletRow[];
-  const remoteBudgetItems = (budgetItemsResponse.data ?? []) as SupabaseBudgetItemRow[];
-
-  const wallets = remoteWallets.map((wallet) =>
-    toLocalWallet(wallet as SupabaseWalletRow)
+  const remoteRows = await pullRemoteRows(userId, pullSinceTimestamp);
+  const nextCheckpoint = await applyRemoteRows(
+    remoteRows.wallets,
+    remoteRows.budgetItems
   );
-  const budgetItems = remoteBudgetItems.map((item) =>
-    toLocalBudgetItem(item as SupabaseBudgetItemRow)
-  );
-  const walletsToStore = await withoutPendingLocalWallets(wallets);
-  const budgetItemsToStore = await withoutPendingLocalBudgetItems(budgetItems);
-  const nextCheckpoint = maxLocalUpdatedAt(walletsToStore, budgetItemsToStore);
-
-  await db.transaction('rw', db.wallets, db.budgetItems, async () => {
-    if (walletsToStore.length > 0) {
-      await db.wallets.bulkPut(walletsToStore);
-    }
-
-    if (budgetItemsToStore.length > 0) {
-      await db.budgetItems.bulkPut(budgetItemsToStore);
-    }
-  });
 
   if (nextCheckpoint !== null) {
     localStorage.setItem(key, nextCheckpoint.toString());
@@ -227,6 +279,7 @@ export async function fullSync(userId: string): Promise<void> {
     return;
   }
 
+  await syncHydrate(userId);
   await syncPush(userId);
   await syncPull(userId);
 }

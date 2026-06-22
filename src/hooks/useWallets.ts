@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 
 import { db } from '../lib/db';
+import { createUuid } from '../lib/uuid';
 import type { Wallet } from '../types';
 
 export type CreateWalletResult =
@@ -50,7 +51,7 @@ export function useWallets(): {
       const newOrder = (maxOrderWallet?.order ?? -1) + 1;
 
       const newWallet: Wallet = {
-        id: crypto.randomUUID(),
+        id: createUuid(),
         name: trimmedName,
         order: newOrder,
         createdAt: Date.now(),

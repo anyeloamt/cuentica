@@ -1,7 +1,8 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { User, AuthChangeEvent, Session } from '@supabase/supabase-js';
 
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { prepareLocalUser } from '../lib/db';
 
 interface AuthResult {
   ok: boolean;
@@ -31,21 +32,27 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
 
     let isMounted = true;
 
-    supabase.auth.getSession().then(({ data }) => {
+    const applySession = async (session: Session | null): Promise<void> => {
+      const nextUser = session?.user ?? null;
+
+      if (nextUser) {
+        setUser(null);
+        await prepareLocalUser(nextUser.id);
+      }
+
       if (isMounted) {
-        setUser(data.session?.user ?? null);
+        setUser(nextUser);
         setLoading(false);
       }
-    });
+    };
+
+    void supabase.auth.getSession().then(({ data }) => applySession(data.session));
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(
       (_event: AuthChangeEvent, session: Session | null) => {
-        if (isMounted) {
-          setUser(session?.user ?? null);
-          setLoading(false);
-        }
+        void applySession(session);
       }
     );
 

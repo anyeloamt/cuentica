@@ -16,3 +16,18 @@ export class CuenticaDB extends Dexie {
 }
 
 export const db = new CuenticaDB();
+
+const localOwnerStorageKey = 'cuentica-local-owner';
+
+export async function prepareLocalUser(userId: string): Promise<void> {
+  const localOwner = localStorage.getItem(localOwnerStorageKey);
+
+  if (localOwner !== null && localOwner !== userId) {
+    await db.transaction('rw', db.wallets, db.budgetItems, async () => {
+      await db.wallets.clear();
+      await db.budgetItems.clear();
+    });
+  }
+
+  localStorage.setItem(localOwnerStorageKey, userId);
+}

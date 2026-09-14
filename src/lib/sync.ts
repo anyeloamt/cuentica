@@ -1,6 +1,6 @@
 import type { BudgetItem, Wallet } from '../types';
 
-import { db } from './db';
+import { db, prepareLocalUser } from './db';
 import {
   toLocalBudgetItem,
   toLocalWallet,
@@ -14,7 +14,12 @@ import { supabase } from './supabase';
 const SYNC_BATCH_SIZE = 100;
 const PULL_CHECKPOINT_OVERLAP_MS = 24 * 60 * 60 * 1000;
 
-const getLastSyncStorageKey = (userId: string): string => `cuentica-sync-ts-${userId}`;
+type SyncEntity = 'wallets' | 'budget-items';
+
+const getEntityCheckpointStorageKey = (userId: string, entity: SyncEntity): string =>
+  `cuentica-sync-ts-${userId}-${entity}`;
+const getReconciledStorageKey = (userId: string, entity: SyncEntity): string =>
+  `cuentica-reconciled-${userId}-${entity}`;
 const getInitialCloudPullStorageKey = (userId: string): string =>
   `cuentica-initial-cloud-pull-v2-${userId}`;
 
@@ -42,20 +47,12 @@ const chunk = <T>(input: T[], size: number): T[][] => {
   return chunks;
 };
 
-const maxLocalUpdatedAt = (
-  wallets: (Wallet & { id: string })[],
-  budgetItems: (BudgetItem & { id: string })[]
-): number | null => {
-  const timestamps = [
-    ...wallets.map((wallet) => wallet.updatedAt),
-    ...budgetItems.map((item) => item.updatedAt),
-  ];
-
-  if (timestamps.length === 0) {
+const maxUpdatedAt = <T extends { updatedAt: number }>(rows: T[]): number | null => {
+  if (rows.length === 0) {
     return null;
   }
 
-  return Math.max(...timestamps);
+  return Math.max(...rows.map((row) => row.updatedAt));
 };
 
 const withoutPendingLocalWallets = async (
@@ -98,73 +95,96 @@ const withoutPendingLocalBudgetItems = async (
   return budgetItems.filter((item) => !pendingLocalIds.has(item.id));
 };
 
-const pullRemoteRows = async (
+const pullRemoteWallets = async (
   userId: string,
   pullSinceTimestamp: number | null
-): Promise<{
-  wallets: SupabaseWalletRow[];
-  budgetItems: SupabaseBudgetItemRow[];
-}> => {
+): Promise<SupabaseWalletRow[]> => {
   const client = assertSupabaseConfigured();
   const walletsQuery = client
     .from('wallets')
     .select(walletColumns)
     .eq('user_id', userId);
-  const budgetItemsQuery = client
-    .from('budget_items')
-    .select(budgetItemColumns)
-    .eq('user_id', userId);
-
-  const [walletsResponse, budgetItemsResponse] = await Promise.all([
-    pullSinceTimestamp === null
-      ? walletsQuery
-      : walletsQuery.gt('updated_at', pullSinceTimestamp),
-    pullSinceTimestamp === null
-      ? budgetItemsQuery
-      : budgetItemsQuery.gt('updated_at', pullSinceTimestamp),
-  ]);
+  const walletsResponse = await (pullSinceTimestamp === null
+    ? walletsQuery
+    : walletsQuery.gt('updated_at', pullSinceTimestamp));
 
   if (walletsResponse.error) {
     throw new Error(walletsResponse.error.message);
   }
 
+  return (walletsResponse.data ?? []) as SupabaseWalletRow[];
+};
+
+const pullRemoteBudgetItems = async (
+  userId: string,
+  pullSinceTimestamp: number | null
+): Promise<SupabaseBudgetItemRow[]> => {
+  const client = assertSupabaseConfigured();
+  const budgetItemsQuery = client
+    .from('budget_items')
+    .select(budgetItemColumns)
+    .eq('user_id', userId);
+  const budgetItemsResponse = await (pullSinceTimestamp === null
+    ? budgetItemsQuery
+    : budgetItemsQuery.gt('updated_at', pullSinceTimestamp));
+
   if (budgetItemsResponse.error) {
     throw new Error(budgetItemsResponse.error.message);
   }
 
-  return {
-    wallets: (walletsResponse.data ?? []) as SupabaseWalletRow[],
-    budgetItems: (budgetItemsResponse.data ?? []) as SupabaseBudgetItemRow[],
-  };
+  return (budgetItemsResponse.data ?? []) as SupabaseBudgetItemRow[];
 };
 
-const applyRemoteRows = async (
-  remoteWallets: SupabaseWalletRow[],
-  remoteBudgetItems: SupabaseBudgetItemRow[]
-): Promise<number | null> => {
+const applyRemoteWallets = async (remoteWallets: SupabaseWalletRow[]): Promise<number | null> => {
   const wallets = remoteWallets.map((wallet) => ({
     ...toLocalWallet(wallet),
     syncStatus: 'synced' as const,
   }));
+  const walletsToStore = await withoutPendingLocalWallets(wallets);
+  await db.wallets.bulkPut(walletsToStore);
+  return maxUpdatedAt(walletsToStore);
+};
+
+const applyRemoteBudgetItems = async (
+  remoteBudgetItems: SupabaseBudgetItemRow[]
+): Promise<number | null> => {
   const budgetItems = remoteBudgetItems.map((item) => ({
     ...toLocalBudgetItem(item),
     syncStatus: 'synced' as const,
   }));
-  const walletsToStore = await withoutPendingLocalWallets(wallets);
   const budgetItemsToStore = await withoutPendingLocalBudgetItems(budgetItems);
-  const nextCheckpoint = maxLocalUpdatedAt(walletsToStore, budgetItemsToStore);
+  await db.budgetItems.bulkPut(budgetItemsToStore);
+  return maxUpdatedAt(budgetItemsToStore);
+};
 
-  await db.transaction('rw', db.wallets, db.budgetItems, async () => {
-    if (walletsToStore.length > 0) {
-      await db.wallets.bulkPut(walletsToStore);
-    }
+const getPullSinceTimestamp = (userId: string, entity: SyncEntity): number | null => {
+  if (localStorage.getItem(getReconciledStorageKey(userId, entity)) !== 'done') {
+    return null;
+  }
 
-    if (budgetItemsToStore.length > 0) {
-      await db.budgetItems.bulkPut(budgetItemsToStore);
-    }
-  });
+  const parsed = Number.parseInt(
+    localStorage.getItem(getEntityCheckpointStorageKey(userId, entity)) ?? '0',
+    10
+  );
+  const checkpoint = Number.isNaN(parsed) ? 0 : parsed;
+  return Math.max(0, checkpoint - PULL_CHECKPOINT_OVERLAP_MS);
+};
 
-  return nextCheckpoint;
+const syncEntityPull = async (userId: string, entity: SyncEntity): Promise<void> => {
+  const pullSinceTimestamp = getPullSinceTimestamp(userId, entity);
+  const nextCheckpoint =
+    entity === 'wallets'
+      ? await applyRemoteWallets(await pullRemoteWallets(userId, pullSinceTimestamp))
+      : await applyRemoteBudgetItems(await pullRemoteBudgetItems(userId, pullSinceTimestamp));
+
+  if (nextCheckpoint !== null) {
+    localStorage.setItem(
+      getEntityCheckpointStorageKey(userId, entity),
+      nextCheckpoint.toString()
+    );
+  }
+
+  localStorage.setItem(getReconciledStorageKey(userId, entity), 'done');
 };
 
 export async function syncHydrate(userId: string): Promise<void> {
@@ -174,20 +194,12 @@ export async function syncHydrate(userId: string): Promise<void> {
     return;
   }
 
-  const remoteRows = await pullRemoteRows(userId, null);
-  const nextCheckpoint = await applyRemoteRows(
-    remoteRows.wallets,
-    remoteRows.budgetItems
-  );
-
-  if (nextCheckpoint !== null) {
-    localStorage.setItem(getLastSyncStorageKey(userId), nextCheckpoint.toString());
-  }
-
+  await syncPull(userId);
   localStorage.setItem(hydrationKey, 'done');
 }
 
 export async function syncPush(userId: string): Promise<void> {
+  await prepareLocalUser(userId);
   const client = assertSupabaseConfigured();
   const [pendingWallets, pendingBudgetItems] = await Promise.all([
     db.wallets.where('syncStatus').equals('pending').toArray(),
@@ -258,20 +270,17 @@ export async function syncPush(userId: string): Promise<void> {
 }
 
 export async function syncPull(userId: string): Promise<void> {
-  const key = getLastSyncStorageKey(userId);
-  const lastSyncTimestampRaw = localStorage.getItem(key);
-  const parsed = Number.parseInt(lastSyncTimestampRaw ?? '0', 10);
-  const lastSyncTimestamp = Number.isNaN(parsed) ? 0 : parsed;
-  const pullSinceTimestamp = Math.max(0, lastSyncTimestamp - PULL_CHECKPOINT_OVERLAP_MS);
-  const remoteRows = await pullRemoteRows(userId, pullSinceTimestamp);
-  const nextCheckpoint = await applyRemoteRows(
-    remoteRows.wallets,
-    remoteRows.budgetItems
-  );
+  await syncEntityPull(userId, 'wallets');
+  await syncEntityPull(userId, 'budget-items');
+}
 
-  if (nextCheckpoint !== null) {
-    localStorage.setItem(key, nextCheckpoint.toString());
-  }
+export async function repairSync(userId: string): Promise<void> {
+  (['wallets', 'budget-items'] as const).forEach((entity) => {
+    localStorage.removeItem(getEntityCheckpointStorageKey(userId, entity));
+    localStorage.removeItem(getReconciledStorageKey(userId, entity));
+  });
+
+  await fullSync(userId);
 }
 
 export async function fullSync(userId: string): Promise<void> {
@@ -279,6 +288,7 @@ export async function fullSync(userId: string): Promise<void> {
     return;
   }
 
+  await prepareLocalUser(userId);
   await syncHydrate(userId);
   await syncPush(userId);
   await syncPull(userId);

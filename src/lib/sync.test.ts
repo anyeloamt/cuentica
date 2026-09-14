@@ -147,9 +147,13 @@ vi.mock('./supabase', () => ({
   supabase: supabaseMock.supabase,
 }));
 
-const { fullSync, syncHydrate, syncPull } = await import('./sync');
+const { fullSync, repairSync, syncHydrate, syncPull } = await import('./sync');
 
 const syncKey = 'cuentica-sync-ts-user-1';
+const walletSyncKey = 'cuentica-sync-ts-user-1-wallets';
+const budgetItemSyncKey = 'cuentica-sync-ts-user-1-budget-items';
+const walletReconciledKey = 'cuentica-reconciled-user-1-wallets';
+const budgetItemReconciledKey = 'cuentica-reconciled-user-1-budget-items';
 const migrationKey = 'cuentica-migration-user-1';
 const hydrationKey = 'cuentica-initial-cloud-pull-v2-user-1';
 
@@ -205,7 +209,8 @@ describe('syncPull', () => {
   });
 
   it('pulls a remote wallet that falls behind a previous client-clock checkpoint', async () => {
-    localStorage.setItem(syncKey, '20000');
+    localStorage.setItem(walletSyncKey, '20000');
+    localStorage.setItem(walletReconciledKey, 'done');
     supabaseMock.state.rows.wallets = [createRemoteWallet({ updated_at: 15_000 })];
 
     await syncPull('user-1');
@@ -214,18 +219,19 @@ describe('syncPull', () => {
 
     expect(wallet?.name).toBe('Remote Wallet');
     expect(wallet?.updatedAt).toBe(15_000);
-    expect(localStorage.getItem(syncKey)).toBe('15000');
+    expect(localStorage.getItem(walletSyncKey)).toBe('15000');
     expect(
       supabaseMock.state.calls.find((call) => call.table === 'wallets')?.gtValue
     ).toBe(0);
   });
 
   it('does not advance the checkpoint when no remote rows are applied', async () => {
-    localStorage.setItem(syncKey, '20000');
+    localStorage.setItem(walletSyncKey, '20000');
+    localStorage.setItem(walletReconciledKey, 'done');
 
     await syncPull('user-1');
 
-    expect(localStorage.getItem(syncKey)).toBe('20000');
+    expect(localStorage.getItem(walletSyncKey)).toBe('20000');
   });
 
   it('stores the checkpoint as the highest applied remote updatedAt', async () => {
@@ -236,7 +242,10 @@ describe('syncPull', () => {
 
     await syncPull('user-1');
 
-    expect(localStorage.getItem(syncKey)).toBe('2500');
+    expect(localStorage.getItem(walletSyncKey)).toBe('1500');
+    expect(localStorage.getItem(budgetItemSyncKey)).toBe('2500');
+    expect(localStorage.getItem(walletReconciledKey)).toBe('done');
+    expect(localStorage.getItem(budgetItemReconciledKey)).toBe('done');
   });
 
   it('does not overwrite a same-id local wallet with pending changes', async () => {
@@ -310,6 +319,25 @@ describe('syncHydrate', () => {
 
     expect(localStorage.getItem(hydrationKey)).toBeNull();
   });
+
+  it('retries only the entity whose reconciliation failed', async () => {
+    supabaseMock.state.rows.wallets = [createRemoteWallet()];
+    supabaseMock.state.unfilteredErrorTables = ['budget_items'];
+
+    await expect(syncPull('user-1')).rejects.toThrow('network');
+
+    expect(localStorage.getItem(walletReconciledKey)).toBe('done');
+    expect(localStorage.getItem(budgetItemReconciledKey)).toBeNull();
+    expect(localStorage.getItem(walletSyncKey)).toBe('2000');
+    expect(localStorage.getItem(budgetItemSyncKey)).toBeNull();
+
+    supabaseMock.state.unfilteredErrorTables = [];
+    await syncPull('user-1');
+
+    expect(
+      supabaseMock.state.calls.filter((call) => call.table === 'budget_items' && call.gtValue === null)
+    ).toHaveLength(2);
+  });
 });
 
 describe('fullSync', () => {
@@ -326,6 +354,120 @@ describe('fullSync', () => {
 
   afterEach(async () => {
     await db.delete();
+  });
+
+  it('reconciles old cloud wallets after local data becomes partial', async () => {
+    localStorage.setItem(hydrationKey, 'done');
+    localStorage.setItem(syncKey, '2000000000');
+    supabaseMock.state.rows.wallets = [
+      createRemoteWallet({ id: 'old-wallet-1', updated_at: 1_000_000_000 }),
+      createRemoteWallet({ id: 'old-wallet-2', updated_at: 1_000_000_100 }),
+      createRemoteWallet({ id: 'old-wallet-3', updated_at: 1_000_000_200 }),
+    ];
+    await db.wallets.add({
+      id: 'old-wallet-1',
+      name: 'Remote Wallet',
+      order: 1,
+      createdAt: 1_000,
+      updatedAt: 1_000_000_000,
+      syncStatus: 'synced',
+      deleted: false,
+    });
+
+    await fullSync('user-1');
+
+    expect(await db.wallets.count()).toBe(3);
+  });
+
+  it('reconciles old remote tombstones without replacing pending local rows', async () => {
+    supabaseMock.state.rows.wallets = [
+      createRemoteWallet({ id: 'old-deleted-wallet', deleted: true, updated_at: 1_000_000_000 }),
+      createRemoteWallet({ id: 'pending-wallet', deleted: true, updated_at: 1_000_000_100 }),
+    ];
+    supabaseMock.state.rows.budget_items = [
+      createRemoteBudgetItem({ id: 'old-deleted-item', deleted: true, updated_at: 1_000_000_200 }),
+    ];
+    await db.wallets.bulkAdd([
+      {
+        id: 'old-deleted-wallet',
+        name: 'Stale Wallet',
+        order: 1,
+        createdAt: 1_000,
+        updatedAt: 1_000,
+        syncStatus: 'synced',
+        deleted: false,
+      },
+      {
+        id: 'pending-wallet',
+        name: 'Pending Wallet',
+        order: 2,
+        createdAt: 1_000,
+        updatedAt: 2_000_000_000,
+        syncStatus: 'pending',
+        deleted: false,
+      },
+    ]);
+    await db.budgetItems.add({
+      id: 'old-deleted-item',
+      walletId: 'old-deleted-wallet',
+      order: 1,
+      name: 'Stale Item',
+      type: '+',
+      amount: 100,
+      createdAt: 1_000,
+      updatedAt: 1_000,
+      syncStatus: 'synced',
+      deleted: false,
+    });
+
+    await syncPull('user-1');
+
+    expect((await db.wallets.get('old-deleted-wallet'))?.deleted).toBe(true);
+    expect((await db.wallets.get('pending-wallet'))?.deleted).toBe(false);
+    expect((await db.wallets.get('pending-wallet'))?.syncStatus).toBe('pending');
+    expect((await db.budgetItems.get('old-deleted-item'))?.deleted).toBe(true);
+  });
+
+  it('repairs both entity boundaries without clearing pending local rows', async () => {
+    await db.wallets.add({
+      id: 'pending-wallet',
+      name: 'Pending Wallet',
+      order: 1,
+      createdAt: 1_000,
+      updatedAt: 3_000,
+      syncStatus: 'pending',
+      deleted: false,
+    });
+    localStorage.setItem(walletSyncKey, '9999');
+    localStorage.setItem(budgetItemSyncKey, '9999');
+    localStorage.setItem(walletReconciledKey, 'done');
+    localStorage.setItem(budgetItemReconciledKey, 'done');
+
+    await repairSync('user-1');
+
+    expect((await db.wallets.get('pending-wallet'))?.syncStatus).toBe('synced');
+    expect(localStorage.getItem(walletReconciledKey)).toBe('done');
+    expect(localStorage.getItem(budgetItemReconciledKey)).toBe('done');
+  });
+
+  it('clears a previous authenticated user local rows before syncing another user', async () => {
+    await db.wallets.add({
+      id: 'user-a-wallet',
+      name: 'User A Wallet',
+      order: 1,
+      createdAt: 1_000,
+      updatedAt: 1_000,
+      syncStatus: 'pending',
+      deleted: false,
+    });
+    localStorage.setItem('cuentica-local-owner', 'user-a');
+    supabaseMock.state.rows.wallets = [createRemoteWallet({ id: 'user-b-wallet', user_id: 'user-b' })];
+
+    await fullSync('user-b');
+
+    expect(await db.wallets.get('user-a-wallet')).toBeUndefined();
+    expect((await db.wallets.get('user-b-wallet'))?.name).toBe('Remote Wallet');
+    expect(supabaseMock.state.upserts.wallets).toHaveLength(0);
   });
 
   it('hydrates older visible and deleted remote data despite a recent checkpoint', async () => {
@@ -402,7 +544,8 @@ describe('fullSync', () => {
 
     await fullSync('user-1');
 
-    expect(localStorage.getItem(syncKey)).toBe('7000');
+    expect(localStorage.getItem(walletSyncKey)).toBe('7000');
+    expect(localStorage.getItem(budgetItemSyncKey)).toBe('5000');
   });
 
   it('keeps successfully pushed local rows synced after the follow-up pull', async () => {

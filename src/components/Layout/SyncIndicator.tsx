@@ -30,7 +30,7 @@ function formatRelativeSyncTime(timestamp: number | null): string {
 
 export function SyncIndicator(): JSX.Element | null {
   const { user } = useAuth();
-  const { syncState, pendingCount, lastSyncedAt, error } = useSync();
+  const { syncState, pendingCount, lastSyncedAt, error, hasConverged, repairSync } = useSync();
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -47,8 +47,8 @@ export function SyncIndicator(): JSX.Element | null {
       return `${pendingCount} pending change${pendingCount === 1 ? '' : 's'}`;
     }
 
-    return 'All changes synced';
-  }, [pendingCount, syncState]);
+    return hasConverged ? 'All changes synced' : 'Sync needs repair';
+  }, [hasConverged, pendingCount, syncState]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -80,12 +80,6 @@ export function SyncIndicator(): JSX.Element | null {
     return null;
   }
 
-  const isVisible = syncState === 'syncing' || syncState === 'error' || pendingCount > 0;
-
-  if (!isVisible && !isOpen) {
-    return null;
-  }
-
   return (
     <div className="relative" ref={containerRef}>
       <button
@@ -107,6 +101,10 @@ export function SyncIndicator(): JSX.Element | null {
         {syncState === 'idle' && pendingCount > 0 && (
           <span className="h-2.5 w-2.5 rounded-full bg-warning" />
         )}
+
+        {syncState === 'idle' && pendingCount === 0 && (
+          <span className="h-2.5 w-2.5 rounded-full bg-accent" />
+        )}
       </button>
 
       {isOpen && (
@@ -117,6 +115,14 @@ export function SyncIndicator(): JSX.Element | null {
           </p>
           <p className="mt-1 text-xs text-text-secondary">Pending: {pendingCount}</p>
           {error && <p className="mt-1 text-xs text-error">{error}</p>}
+          <button
+            type="button"
+            onClick={() => void repairSync()}
+            disabled={syncState === 'syncing'}
+            className="mt-3 text-xs font-medium text-accent transition-colors hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Repair sync
+          </button>
         </div>
       )}
     </div>

@@ -13,7 +13,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 
 import { useAuth } from '../context/AuthContext';
 import { db } from '../lib/db';
-import { fullSync, syncPush } from '../lib/sync';
+import { fullSync, repairSync as runRepairSync, syncPush } from '../lib/sync';
 
 const FULL_SYNC_INTERVAL_MS = 5 * 60 * 1000;
 const PUSH_DEBOUNCE_MS = 500;
@@ -23,6 +23,8 @@ export interface UseSyncResult {
   lastSyncedAt: number | null;
   pendingCount: number;
   error: string | null;
+  hasConverged: boolean;
+  repairSync: () => Promise<void>;
 }
 
 const SyncContext = createContext<UseSyncResult | undefined>(undefined);
@@ -32,6 +34,7 @@ function useSyncController(): UseSyncResult {
   const [syncState, setSyncState] = useState<UseSyncResult['syncState']>('idle');
   const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [hasConverged, setHasConverged] = useState(false);
 
   const isMountedRef = useRef(true);
   const isSyncingRef = useRef(false);
@@ -58,7 +61,7 @@ function useSyncController(): UseSyncResult {
   }, []);
 
   const runSync = useCallback(
-    async (mode: 'full' | 'push'): Promise<void> => {
+    async (mode: 'full' | 'push' | 'repair'): Promise<void> => {
       if (!user || !isConfigured || isSyncingRef.current) {
         return;
       }
@@ -73,13 +76,18 @@ function useSyncController(): UseSyncResult {
       try {
         if (mode === 'full') {
           await fullSync(user.id);
+        } else if (mode === 'repair') {
+          await runRepairSync(user.id);
         } else {
           await syncPush(user.id);
         }
 
         if (isMountedRef.current) {
           setSyncState('idle');
-          setLastSyncedAt(Date.now());
+          if (mode !== 'push') {
+            setHasConverged(true);
+            setLastSyncedAt(Date.now());
+          }
           setError(null);
         }
       } catch (syncError) {
@@ -89,6 +97,9 @@ function useSyncController(): UseSyncResult {
         if (isMountedRef.current) {
           setSyncState('error');
           setError(errorMessage);
+          if (mode !== 'push') {
+            setHasConverged(false);
+          }
         }
       } finally {
         isSyncingRef.current = false;
@@ -113,6 +124,7 @@ function useSyncController(): UseSyncResult {
       setSyncState('idle');
       setLastSyncedAt(null);
       setError(null);
+      setHasConverged(false);
       return;
     }
 
@@ -148,6 +160,7 @@ function useSyncController(): UseSyncResult {
     }
 
     if (pendingCount > 0) {
+      setHasConverged(false);
       clearPendingDebounce();
       pendingDebounceRef.current = window.setTimeout(() => {
         void runSync('push');
@@ -157,14 +170,20 @@ function useSyncController(): UseSyncResult {
     return clearPendingDebounce;
   }, [canSync, clearPendingDebounce, pendingCount, runSync]);
 
+  const repairSync = useCallback(async (): Promise<void> => {
+    await runSync('repair');
+  }, [runSync]);
+
   return useMemo(
     () => ({
       syncState,
       lastSyncedAt,
       pendingCount,
       error,
+      hasConverged,
+      repairSync,
     }),
-    [error, lastSyncedAt, pendingCount, syncState]
+    [error, hasConverged, lastSyncedAt, pendingCount, repairSync, syncState]
   );
 }
 

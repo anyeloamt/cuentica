@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SyncIndicator } from './SyncIndicator';
 
@@ -8,7 +8,7 @@ const syncState = vi.hoisted(() => ({
   value: {
     syncState: 'idle' as 'idle' | 'syncing' | 'error',
     pendingCount: 0,
-    lastSyncedAt: 1_000,
+    lastSyncedAt: 1_000 as number | null,
     error: null as string | null,
     hasConverged: true,
   },
@@ -23,6 +23,17 @@ vi.mock('../../hooks/useSync', () => ({
 }));
 
 describe('SyncIndicator', () => {
+  beforeEach(() => {
+    syncState.repairSync.mockClear();
+    syncState.value = {
+      syncState: 'idle',
+      pendingCount: 0,
+      lastSyncedAt: 1_000,
+      error: null,
+      hasConverged: true,
+    };
+  });
+
   it('offers an authenticated repair action even after a converged sync', () => {
     render(<SyncIndicator />);
 
@@ -43,5 +54,18 @@ describe('SyncIndicator', () => {
     fireEvent.click(screen.getByLabelText('Syncing changes'));
 
     expect(screen.getByRole('button', { name: 'Repair sync' })).toBeDisabled();
+  });
+
+  it('does not show a completed but non-converged run as synced', () => {
+    syncState.value = {
+      ...syncState.value,
+      lastSyncedAt: null,
+      hasConverged: false,
+    };
+
+    render(<SyncIndicator />);
+
+    expect(screen.getByLabelText('Sync needs repair')).toBeInTheDocument();
+    expect(screen.queryByLabelText('All changes synced')).not.toBeInTheDocument();
   });
 });

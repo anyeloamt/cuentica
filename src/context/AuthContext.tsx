@@ -31,28 +31,48 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
     }
 
     let isMounted = true;
+    let sessionSequence = 0;
+    let sessionQueue = Promise.resolve();
 
-    const applySession = async (session: Session | null): Promise<void> => {
-      const nextUser = session?.user ?? null;
+    const applySession = (session: Session | null, sequence: number): Promise<void> => {
+      sessionQueue = sessionQueue
+        .then(async () => {
+          if (!isMounted || sequence !== sessionSequence) {
+            return;
+          }
 
-      if (nextUser) {
-        setUser(null);
-        await prepareLocalUser(nextUser.id);
-      }
+          const nextUser = session?.user ?? null;
 
-      if (isMounted) {
-        setUser(nextUser);
-        setLoading(false);
-      }
+          if (nextUser) {
+            setUser(null);
+            await prepareLocalUser(nextUser.id);
+          }
+
+          if (isMounted && sequence === sessionSequence) {
+            setUser(nextUser);
+            setLoading(false);
+          }
+        })
+        .catch(() => {
+          if (isMounted && sequence === sessionSequence) {
+            setUser(null);
+            setLoading(false);
+          }
+        });
+
+      return sessionQueue;
     };
 
-    void supabase.auth.getSession().then(({ data }) => applySession(data.session));
+    const initialSessionSequence = ++sessionSequence;
+    void supabase.auth
+      .getSession()
+      .then(({ data }) => applySession(data.session, initialSessionSequence));
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(
       (_event: AuthChangeEvent, session: Session | null) => {
-        void applySession(session);
+        void applySession(session, ++sessionSequence);
       }
     );
 

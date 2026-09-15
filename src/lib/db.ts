@@ -18,16 +18,63 @@ export class CuenticaDB extends Dexie {
 export const db = new CuenticaDB();
 
 const localOwnerStorageKey = 'cuentica-local-owner';
+const localOwnerGenerationStorageKey = 'cuentica-local-owner-generation';
 
-export async function prepareLocalUser(userId: string): Promise<void> {
-  const localOwner = localStorage.getItem(localOwnerStorageKey);
+export interface LocalOwnerToken {
+  userId: string;
+  generation: number;
+}
 
-  if (localOwner !== null && localOwner !== userId) {
-    await db.transaction('rw', db.wallets, db.budgetItems, async () => {
+const readLocalOwnerGeneration = (): number => {
+  const generation = Number.parseInt(
+    localStorage.getItem(localOwnerGenerationStorageKey) ?? '0',
+    10
+  );
+  return Number.isNaN(generation) ? 0 : generation;
+};
+
+export function isLocalOwnerTokenCurrent(token: LocalOwnerToken): boolean {
+  return (
+    localStorage.getItem(localOwnerStorageKey) === token.userId &&
+    readLocalOwnerGeneration() === token.generation
+  );
+}
+
+export function assertLocalOwner(token: LocalOwnerToken): void {
+  if (!isLocalOwnerTokenCurrent(token)) {
+    throw new Error('Local data owner changed');
+  }
+}
+
+export function getLocalOwnerToken(userId: string): LocalOwnerToken {
+  const token = {
+    userId,
+    generation: readLocalOwnerGeneration(),
+  };
+  assertLocalOwner(token);
+  return token;
+}
+
+export async function prepareLocalUser(userId: string): Promise<LocalOwnerToken> {
+  return db.transaction('rw', db.wallets, db.budgetItems, async () => {
+    const localOwner = localStorage.getItem(localOwnerStorageKey);
+    const generation = readLocalOwnerGeneration();
+
+    if (
+      localOwner === userId &&
+      localStorage.getItem(localOwnerGenerationStorageKey) !== null
+    ) {
+      return { userId, generation };
+    }
+
+    if (localOwner !== null && localOwner !== userId) {
       await db.wallets.clear();
       await db.budgetItems.clear();
-    });
-  }
+    }
 
-  localStorage.setItem(localOwnerStorageKey, userId);
+    const nextGeneration = generation + 1;
+    localStorage.setItem(localOwnerStorageKey, userId);
+    localStorage.setItem(localOwnerGenerationStorageKey, nextGeneration.toString());
+    return { userId, generation: nextGeneration };
+  });
 }

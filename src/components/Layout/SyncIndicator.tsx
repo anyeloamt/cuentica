@@ -102,8 +102,27 @@ export function SyncIndicator(): JSX.Element | null {
           <span className="h-2.5 w-2.5 rounded-full bg-warning" />
         )}
 
-        {syncState === 'idle' && pendingCount === 0 && (
+        {syncState === 'idle' && pendingCount === 0 && !hasConverged && (
           <span className="h-2.5 w-2.5 rounded-full bg-accent" />
+        )}
+
+        {syncState === 'idle' && pendingCount === 0 && hasConverged && (
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+            className="h-4 w-4"
+            aria-hidden="true"
+            data-testid="healthy-sync-icon"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="m9 12.75 2.25 2.25L15 9.75m6 2.25a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+            />
+          </svg>
         )}
       </button>
 

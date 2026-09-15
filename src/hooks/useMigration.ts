@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useAuth } from '../context/AuthContext';
+import { assertLocalOwner, getLocalOwnerToken } from '../lib/db';
 import { migrateLocalDataForUser } from '../lib/migration';
 
 interface UseMigrationResult {
@@ -23,13 +24,15 @@ export function useMigration(): UseMigrationResult {
   const [migrating, setMigrating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
-  const runningRef = useRef(false);
+  const runningRef = useRef<string | null>(null);
 
   const retry = useCallback((): void => {
     setAttempt((previousAttempt) => previousAttempt + 1);
   }, []);
 
   useEffect(() => {
+    void attempt;
+
     if (loading || !isConfigured || !user) {
       return;
     }
@@ -38,11 +41,14 @@ export function useMigration(): UseMigrationResult {
       return;
     }
 
-    if (runningRef.current) {
+    const ownerToken = getLocalOwnerToken(user.id);
+    const runKey = `${ownerToken.userId}:${ownerToken.generation}`;
+
+    if (runningRef.current === runKey) {
       return;
     }
 
-    runningRef.current = true;
+    runningRef.current = runKey;
     setMigrating(true);
     setError(null);
 
@@ -50,6 +56,7 @@ export function useMigration(): UseMigrationResult {
 
     migrateLocalDataForUser(user.id)
       .then(() => {
+        assertLocalOwner(ownerToken);
         if (!isMounted) {
           return;
         }
@@ -68,7 +75,9 @@ export function useMigration(): UseMigrationResult {
         setError(message);
       })
       .finally(() => {
-        runningRef.current = false;
+        if (runningRef.current === runKey) {
+          runningRef.current = null;
+        }
 
         if (!isMounted) {
           return;

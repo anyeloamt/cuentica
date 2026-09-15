@@ -18,7 +18,7 @@ interface QueryResult {
 interface QueryCall {
   table: TableName;
   gtValue: number | null;
-  orValue: string | null;
+  cursorId: string | null;
   limit: number;
   orderColumns: string[];
 }
@@ -45,12 +45,11 @@ interface MockState {
 
 interface SelectQuery {
   eq: (column: 'user_id', value: string) => SelectQuery;
-  gt: (column: 'updated_at', value: number) => SelectQuery;
+  gt: (column: 'updated_at' | 'id', value: number | string) => SelectQuery;
   order: (
     column: 'updated_at' | 'id',
     options: { ascending: true }
   ) => SelectQuery;
-  or: (filters: string) => SelectQuery;
   limit: (count: number) => Promise<QueryResult>;
 }
 
@@ -105,23 +104,25 @@ const supabaseMock = vi.hoisted(
     const createSelectQuery = (table: TableName): SelectQuery => {
       let userId = '';
       let gtValue: number | null = null;
-      let orValue: string | null = null;
+      let cursorId: string | null = null;
       const orderColumns: string[] = [];
       const query: SelectQuery = {
         eq: (_column: 'user_id', value: string): SelectQuery => {
           userId = value;
           return query;
         },
-        gt: (_column: 'updated_at', value: number): SelectQuery => {
-          gtValue = value;
+        gt: (column: 'updated_at' | 'id', value: number | string): SelectQuery => {
+          if (column === 'updated_at' && typeof value === 'number') {
+            gtValue = value;
+          } else if (column === 'id' && typeof value === 'string') {
+            cursorId = value;
+          } else {
+            throw new Error(`Unexpected filter: ${column} > ${value}`);
+          }
           return query;
         },
         order: (column: 'updated_at' | 'id'): SelectQuery => {
           orderColumns.push(column);
-          return query;
-        },
-        or: (filters: string): SelectQuery => {
-          orValue = filters;
           return query;
         },
         limit: async (count: number): Promise<QueryResult> => {
@@ -129,7 +130,7 @@ const supabaseMock = vi.hoisted(
           state.calls.push({
             table,
             gtValue,
-            orValue,
+            cursorId,
             limit: count,
             orderColumns: [...orderColumns],
           });
@@ -143,34 +144,10 @@ const supabaseMock = vi.hoisted(
             return { data: null, error: { message: 'network' } };
           }
 
-          const cursorMatch = orValue?.match(
-            /^updated_at\.gt\.(-?\d+),and\(updated_at\.eq\.(-?\d+),id\.gt\.(.+)\)$/
-          );
-          if (orValue !== null && !cursorMatch) {
-            throw new Error(`Unexpected keyset filter: ${orValue}`);
-          }
-          const cursorUpdatedAt = cursorMatch ? Number.parseInt(cursorMatch[1], 10) : null;
-          const cursorId = cursorMatch?.[3] ?? null;
-          if (
-            cursorMatch &&
-            cursorUpdatedAt !== Number.parseInt(cursorMatch[2], 10)
-          ) {
-            throw new Error(`Mismatched keyset filter: ${orValue}`);
-          }
-
           const rows = queryRows(table, userId)
             .filter((row) => gtValue === null || row.updated_at > gtValue)
-            .filter(
-              (row) =>
-                cursorUpdatedAt === null ||
-                row.updated_at > cursorUpdatedAt ||
-                (row.updated_at === cursorUpdatedAt && row.id > (cursorId ?? ''))
-            )
-            .sort((left, right) =>
-              left.updated_at === right.updated_at
-                ? left.id.localeCompare(right.id)
-                : left.updated_at - right.updated_at
-            )
+            .filter((row) => cursorId === null || row.id > cursorId)
+            .sort((left, right) => left.id.localeCompare(right.id))
             .slice(0, count);
 
           return { data: rows, error: null };
@@ -369,7 +346,7 @@ describe('syncPull', () => {
     expect(localStorage.getItem(walletReconciledKey)).toBe('1');
   });
 
-  it('pages both entities in stable updated-at and id order', async () => {
+  it('pages both entities in stable id order', async () => {
     supabaseMock.state.rows.wallets = Array.from({ length: 101 }, (_, index) =>
       createRemoteWallet({
         id: `wallet-${index.toString().padStart(3, '0')}`,
@@ -393,23 +370,20 @@ describe('syncPull', () => {
     expect(
       supabaseMock.state.calls
         .filter((call) => call.table === 'wallets')
-        .map(({ orValue, limit, orderColumns }) => ({ orValue, limit, orderColumns }))
+        .map(({ cursorId, limit, orderColumns }) => ({ cursorId, limit, orderColumns }))
     ).toEqual([
-      { orValue: null, limit: 100, orderColumns: ['updated_at', 'id'] },
+      { cursorId: null, limit: 100, orderColumns: ['id'] },
       {
-        orValue: 'updated_at.gt.2000,and(updated_at.eq.2000,id.gt.wallet-099)',
+        cursorId: 'wallet-099',
         limit: 100,
-        orderColumns: ['updated_at', 'id'],
+        orderColumns: ['id'],
       },
     ]);
     expect(
       supabaseMock.state.calls
         .filter((call) => call.table === 'budget_items')
-        .map((call) => call.orValue)
-    ).toEqual([
-      null,
-      'updated_at.gt.3000,and(updated_at.eq.3000,id.gt.item-099)',
-    ]);
+        .map((call) => call.cursorId)
+    ).toEqual([null, 'item-099']);
   });
 
   it('does not skip an unvisited row when a visited row moves between pages', async () => {
@@ -439,12 +413,44 @@ describe('syncPull', () => {
     expect(markerBeforeSecondPage).toBeNull();
     expect(await db.wallets.count()).toBe(101);
     expect(await db.wallets.get('wallet-100')).toBeDefined();
-    expect((await db.wallets.get('wallet-000'))?.updatedAt).toBe(10_000);
-    expect(localStorage.getItem(walletSyncKey)).toBe('10000');
+    expect(localStorage.getItem(walletSyncKey)).toBe('2100');
     expect(localStorage.getItem(walletReconciledKey)).toBe('1');
     expect(
-      supabaseMock.state.calls.filter((call) => call.table === 'wallets')[1]?.orValue
-    ).toBe('updated_at.gt.2099,and(updated_at.eq.2099,id.gt.wallet-099)');
+      supabaseMock.state.calls.filter((call) => call.table === 'wallets')[1]?.cursorId
+    ).toBe('wallet-099');
+  });
+
+  it('does not skip an unvisited row that moves behind the timestamp cursor', async () => {
+    supabaseMock.state.rows.wallets = Array.from({ length: 101 }, (_, index) =>
+      createRemoteWallet({
+        id: `wallet-${index.toString().padStart(3, '0')}`,
+        updated_at: 2_000 + index,
+      })
+    );
+    let markerBeforeSecondPage: string | null = 'not-checked';
+    supabaseMock.state.beforePage.wallets = (pageIndex) => {
+      if (pageIndex !== 1) {
+        return;
+      }
+
+      markerBeforeSecondPage = localStorage.getItem(walletReconciledKey);
+      const unvisitedRow = supabaseMock.state.rows.wallets.find(
+        (wallet) => wallet.id === 'wallet-100'
+      );
+      if (unvisitedRow) {
+        unvisitedRow.updated_at = 1_000;
+      }
+    };
+
+    await syncPull('user-1');
+
+    expect(markerBeforeSecondPage).toBeNull();
+    expect(await db.wallets.count()).toBe(101);
+    expect((await db.wallets.get('wallet-100'))?.updatedAt).toBe(1_000);
+    expect(
+      supabaseMock.state.calls.filter((call) => call.table === 'wallets')[1]?.cursorId
+    ).toBe('wallet-099');
+    expect(localStorage.getItem(walletReconciledKey)).toBe('1');
   });
 
   it('does not checkpoint an entity when a later page fails', async () => {

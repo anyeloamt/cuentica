@@ -19,7 +19,6 @@ const PULL_CHECKPOINT_OVERLAP_MS = 24 * 60 * 60 * 1000;
 
 type SyncEntity = 'wallets' | 'budget-items';
 interface PullCursor {
-  updatedAt: number;
   id: string;
 }
 
@@ -79,13 +78,8 @@ const pullRemoteWalletPage = async (
     pullSinceTimestamp === null
       ? walletsQuery
       : walletsQuery.gt('updated_at', pullSinceTimestamp);
-  const pageQuery = cursor
-    ? filteredQuery.or(
-        `updated_at.gt.${cursor.updatedAt},and(updated_at.eq.${cursor.updatedAt},id.gt.${cursor.id})`
-      )
-    : filteredQuery;
+  const pageQuery = cursor ? filteredQuery.gt('id', cursor.id) : filteredQuery;
   const walletsResponse = await pageQuery
-    .order('updated_at', { ascending: true })
     .order('id', { ascending: true })
     .limit(SYNC_BATCH_SIZE);
 
@@ -112,13 +106,8 @@ const pullRemoteBudgetItemPage = async (
     pullSinceTimestamp === null
       ? budgetItemsQuery
       : budgetItemsQuery.gt('updated_at', pullSinceTimestamp);
-  const pageQuery = cursor
-    ? filteredQuery.or(
-        `updated_at.gt.${cursor.updatedAt},and(updated_at.eq.${cursor.updatedAt},id.gt.${cursor.id})`
-      )
-    : filteredQuery;
+  const pageQuery = cursor ? filteredQuery.gt('id', cursor.id) : filteredQuery;
   const budgetItemsResponse = await pageQuery
-    .order('updated_at', { ascending: true })
     .order('id', { ascending: true })
     .limit(SYNC_BATCH_SIZE);
 
@@ -238,7 +227,7 @@ const syncEntityPull = async <TRow extends { id: string; updated_at: number }>(
     hasMore = remoteRows.length === SYNC_BATCH_SIZE;
     if (hasMore) {
       const lastRemoteRow = remoteRows[remoteRows.length - 1];
-      cursor = { updatedAt: lastRemoteRow.updated_at, id: lastRemoteRow.id };
+      cursor = { id: lastRemoteRow.id };
     }
   }
 

@@ -23,6 +23,7 @@
 - Run `npm run lint`, `npm run typecheck`, `npm test`, and `npm run build`, plus a browser check of the repair action.
 - Inspect sibling sync/migration/auth flows: migration remains separately guarded and is not used as a recovery boundary; no cloud schema, RLS, Supabase data, PWA install, or storage-clearing changes are in scope.
 - Before delivery, one independent Sol-class reviewer evaluates `origin/master...HEAD`; record model, session/task, head, and verdict, then resolve blocking findings using that same reviewer for at most three rounds.
+- After that approval, push the PR branch, require the existing pull-request CI workflow to pass, squash-merge into `master`, then wait for the repository's existing Vercel Production deployment from `master`. Perform only a read-only production smoke that confirms the merged revision and repair UI/runtime assets; do not create a deployment path, mutate Supabase, or create user data.
 
 ---
 

@@ -35,8 +35,10 @@ describe('SyncIndicator', () => {
   });
 
   it('offers an authenticated repair action even after a converged sync', () => {
-    render(<SyncIndicator />);
+    const { container } = render(<SyncIndicator />);
 
+    expect(screen.getByTestId('healthy-sync-icon')).toBeInTheDocument();
+    expect(container.querySelector('.bg-accent')).not.toBeInTheDocument();
     fireEvent.click(screen.getByLabelText('All changes synced'));
     fireEvent.click(screen.getByRole('button', { name: 'Repair sync' }));
 
@@ -67,5 +69,35 @@ describe('SyncIndicator', () => {
 
     expect(screen.getByLabelText('Sync needs repair')).toBeInTheDocument();
     expect(screen.queryByLabelText('All changes synced')).not.toBeInTheDocument();
+  });
+
+  it('keeps attention states visually distinct', () => {
+    const { container, rerender } = render(<SyncIndicator />);
+
+    syncState.value = {
+      ...syncState.value,
+      pendingCount: 1,
+      hasConverged: false,
+    };
+    rerender(<SyncIndicator />);
+    expect(container.querySelector('.bg-warning')).toBeInTheDocument();
+
+    syncState.value = {
+      ...syncState.value,
+      syncState: 'error',
+      pendingCount: 0,
+      error: 'Unable to sync',
+    };
+    rerender(<SyncIndicator />);
+    expect(container.querySelector('.bg-error')).toBeInTheDocument();
+
+    syncState.value = {
+      ...syncState.value,
+      syncState: 'idle',
+      error: null,
+      hasConverged: false,
+    };
+    rerender(<SyncIndicator />);
+    expect(container.querySelector('.bg-accent')).toBeInTheDocument();
   });
 });

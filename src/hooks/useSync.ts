@@ -12,8 +12,18 @@ import {
 import { useLiveQuery } from 'dexie-react-hooks';
 
 import { useAuth } from '../context/AuthContext';
-import { db } from '../lib/db';
-import { fullSync, syncPush } from '../lib/sync';
+import {
+  db,
+  getLocalOwnerToken,
+  isLocalOwnerTokenCurrent,
+  type LocalOwnerToken,
+} from '../lib/db';
+import {
+  fullSync,
+  repairSync as runRepairSync,
+  syncPush,
+  type SyncResult,
+} from '../lib/sync';
 
 const FULL_SYNC_INTERVAL_MS = 5 * 60 * 1000;
 const PUSH_DEBOUNCE_MS = 500;
@@ -23,20 +33,30 @@ export interface UseSyncResult {
   lastSyncedAt: number | null;
   pendingCount: number;
   error: string | null;
+  hasConverged: boolean;
+  repairSync: () => Promise<void>;
 }
 
 const SyncContext = createContext<UseSyncResult | undefined>(undefined);
+
+interface InFlightSync {
+  key: string;
+  operation: object;
+  promise: Promise<void>;
+}
 
 function useSyncController(): UseSyncResult {
   const { user, isConfigured } = useAuth();
   const [syncState, setSyncState] = useState<UseSyncResult['syncState']>('idle');
   const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [hasConverged, setHasConverged] = useState(false);
 
   const isMountedRef = useRef(true);
-  const isSyncingRef = useRef(false);
+  const currentUserIdRef = useRef<string | null>(user?.id ?? null);
+  const inFlightSyncRef = useRef<InFlightSync | null>(null);
   const pendingDebounceRef = useRef<number | null>(null);
-  const previousPendingCountRef = useRef(0);
+  currentUserIdRef.current = user?.id ?? null;
 
   const pendingCountQuery = useLiveQuery(async () => {
     const [pendingWalletsCount, pendingBudgetItemsCount] = await Promise.all([
@@ -58,41 +78,89 @@ function useSyncController(): UseSyncResult {
   }, []);
 
   const runSync = useCallback(
-    async (mode: 'full' | 'push'): Promise<void> => {
-      if (!user || !isConfigured || isSyncingRef.current) {
+    async (mode: 'full' | 'push' | 'repair'): Promise<void> => {
+      if (!user || !isConfigured) {
         return;
       }
 
-      isSyncingRef.current = true;
+      let ownerToken: LocalOwnerToken;
+      try {
+        ownerToken = getLocalOwnerToken(user.id);
+      } catch {
+        return;
+      }
 
-      if (isMountedRef.current) {
+      const ownerKey = `${ownerToken.userId}:${ownerToken.generation}`;
+      const activeSync = inFlightSyncRef.current;
+
+      if (activeSync?.key === ownerKey) {
+        await activeSync.promise;
+
+        if (mode !== 'repair') {
+          return;
+        }
+
+        if (
+          currentUserIdRef.current !== ownerToken.userId ||
+          !isLocalOwnerTokenCurrent(ownerToken)
+        ) {
+          return;
+        }
+      }
+
+      const operation = {};
+      const canPublish = (): boolean =>
+        isMountedRef.current &&
+        currentUserIdRef.current === ownerToken.userId &&
+        isLocalOwnerTokenCurrent(ownerToken);
+
+      if (canPublish()) {
         setSyncState('syncing');
         setError(null);
       }
 
-      try {
-        if (mode === 'full') {
-          await fullSync(user.id);
-        } else {
-          await syncPush(user.id);
-        }
+      const promise = (async (): Promise<void> => {
+        try {
+          let result: SyncResult | null = null;
+          if (mode === 'full') {
+            result = await fullSync(ownerToken.userId);
+          } else if (mode === 'repair') {
+            result = await runRepairSync(ownerToken.userId);
+          } else {
+            await syncPush(ownerToken.userId);
+          }
 
-        if (isMountedRef.current) {
-          setSyncState('idle');
-          setLastSyncedAt(Date.now());
-          setError(null);
-        }
-      } catch (syncError) {
-        const errorMessage =
-          syncError instanceof Error ? syncError.message : 'Failed to sync data';
+          if (canPublish()) {
+            setSyncState('idle');
+            if (result !== null) {
+              const converged = result === 'converged';
+              setHasConverged(converged);
+              if (converged) {
+                setLastSyncedAt(Date.now());
+              }
+            }
+            setError(null);
+          }
+        } catch (syncError) {
+          const errorMessage =
+            syncError instanceof Error ? syncError.message : 'Failed to sync data';
 
-        if (isMountedRef.current) {
-          setSyncState('error');
-          setError(errorMessage);
+          if (canPublish()) {
+            setSyncState('error');
+            setError(errorMessage);
+            if (mode !== 'push') {
+              setHasConverged(false);
+            }
+          }
+        } finally {
+          if (inFlightSyncRef.current?.operation === operation) {
+            inFlightSyncRef.current = null;
+          }
         }
-      } finally {
-        isSyncingRef.current = false;
-      }
+      })();
+
+      inFlightSyncRef.current = { key: ownerKey, operation, promise };
+      await promise;
     },
     [isConfigured, user]
   );
@@ -109,10 +177,10 @@ function useSyncController(): UseSyncResult {
   useEffect(() => {
     if (!canSync) {
       clearPendingDebounce();
-      previousPendingCountRef.current = 0;
       setSyncState('idle');
       setLastSyncedAt(null);
       setError(null);
+      setHasConverged(false);
       return;
     }
 
@@ -148,6 +216,7 @@ function useSyncController(): UseSyncResult {
     }
 
     if (pendingCount > 0) {
+      setHasConverged(false);
       clearPendingDebounce();
       pendingDebounceRef.current = window.setTimeout(() => {
         void runSync('push');
@@ -157,14 +226,20 @@ function useSyncController(): UseSyncResult {
     return clearPendingDebounce;
   }, [canSync, clearPendingDebounce, pendingCount, runSync]);
 
+  const repairSync = useCallback(async (): Promise<void> => {
+    await runSync('repair');
+  }, [runSync]);
+
   return useMemo(
     () => ({
       syncState,
       lastSyncedAt,
       pendingCount,
       error,
+      hasConverged,
+      repairSync,
     }),
-    [error, lastSyncedAt, pendingCount, syncState]
+    [error, hasConverged, lastSyncedAt, pendingCount, repairSync, syncState]
   );
 }
 

@@ -1,7 +1,8 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { User, AuthChangeEvent, Session } from '@supabase/supabase-js';
 
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { prepareLocalUser } from '../lib/db';
 
 interface AuthResult {
   ok: boolean;
@@ -30,22 +31,48 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
     }
 
     let isMounted = true;
+    let sessionSequence = 0;
+    let sessionQueue = Promise.resolve();
 
-    supabase.auth.getSession().then(({ data }) => {
-      if (isMounted) {
-        setUser(data.session?.user ?? null);
-        setLoading(false);
-      }
-    });
+    const applySession = (session: Session | null, sequence: number): Promise<void> => {
+      sessionQueue = sessionQueue
+        .then(async () => {
+          if (!isMounted || sequence !== sessionSequence) {
+            return;
+          }
+
+          const nextUser = session?.user ?? null;
+
+          if (nextUser) {
+            setUser(null);
+            await prepareLocalUser(nextUser.id);
+          }
+
+          if (isMounted && sequence === sessionSequence) {
+            setUser(nextUser);
+            setLoading(false);
+          }
+        })
+        .catch(() => {
+          if (isMounted && sequence === sessionSequence) {
+            setUser(null);
+            setLoading(false);
+          }
+        });
+
+      return sessionQueue;
+    };
+
+    const initialSessionSequence = ++sessionSequence;
+    void supabase.auth
+      .getSession()
+      .then(({ data }) => applySession(data.session, initialSessionSequence));
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(
       (_event: AuthChangeEvent, session: Session | null) => {
-        if (isMounted) {
-          setUser(session?.user ?? null);
-          setLoading(false);
-        }
+        void applySession(session, ++sessionSequence);
       }
     );
 

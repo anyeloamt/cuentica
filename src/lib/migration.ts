@@ -1,6 +1,11 @@
 import type { BudgetItem, Wallet } from '../types';
 
-import { db } from './db';
+import {
+  assertLocalOwner,
+  db,
+  getLocalOwnerToken,
+  type LocalOwnerToken,
+} from './db';
 import { supabase } from './supabase';
 
 type SyncStatus = 'pending' | 'synced';
@@ -182,32 +187,48 @@ export async function readLocalMigrationData(): Promise<LocalMigrationData> {
   };
 }
 
-export async function upsertLocalDataToSupabase(userId: string): Promise<void> {
+const readLocalMigrationDataForOwner = async (
+  token: LocalOwnerToken
+): Promise<LocalMigrationData> =>
+  db.transaction('r', db.wallets, db.budgetItems, async () => {
+    assertLocalOwner(token);
+    const data = await readLocalMigrationData();
+    assertLocalOwner(token);
+    return data;
+  });
+
+const upsertLocalDataForOwner = async (
+  token: LocalOwnerToken,
+  localData: LocalMigrationData
+): Promise<void> => {
   const client = assertSupabaseConfigured();
-  const localData = await readLocalMigrationData();
 
   const walletsPayload = localData.wallets.map((wallet) =>
-    toSupabaseWallet(wallet, userId)
+    toSupabaseWallet(wallet, token.userId)
   );
   const budgetItemsPayload = localData.budgetItems.map((item) =>
-    toSupabaseBudgetItem(item, userId)
+    toSupabaseBudgetItem(item, token.userId)
   );
 
   if (walletsPayload.length > 0) {
+    assertLocalOwner(token);
     const { error } = await client
       .from('wallets')
       .upsert(walletsPayload, { onConflict: 'id' });
 
+    assertLocalOwner(token);
     if (error) {
       throw new Error(error.message);
     }
   }
 
   if (budgetItemsPayload.length > 0) {
+    assertLocalOwner(token);
     const { error } = await client
       .from('budget_items')
       .upsert(budgetItemsPayload, { onConflict: 'id' });
 
+    assertLocalOwner(token);
     if (error) {
       throw new Error(error.message);
     }
@@ -215,6 +236,7 @@ export async function upsertLocalDataToSupabase(userId: string): Promise<void> {
 
   if (localData.wallets.length > 0 || localData.budgetItems.length > 0) {
     await db.transaction('rw', db.wallets, db.budgetItems, async () => {
+      assertLocalOwner(token);
       if (localData.wallets.length > 0) {
         await db.wallets.bulkPut(
           localData.wallets.map((wallet) => ({ ...wallet, syncStatus: 'synced' }))
@@ -226,45 +248,60 @@ export async function upsertLocalDataToSupabase(userId: string): Promise<void> {
           localData.budgetItems.map((item) => ({ ...item, syncStatus: 'synced' }))
         );
       }
+
+      assertLocalOwner(token);
     });
   }
+};
+
+export async function upsertLocalDataToSupabase(userId: string): Promise<void> {
+  const token = getLocalOwnerToken(userId);
+  await upsertLocalDataForOwner(token, await readLocalMigrationDataForOwner(token));
 }
 
-export async function cloudHasDataForUser(userId: string): Promise<boolean> {
+const cloudHasDataForOwner = async (token: LocalOwnerToken): Promise<boolean> => {
   const client = assertSupabaseConfigured();
+  assertLocalOwner(token);
   const { data, error } = await client
     .from('wallets')
     .select('id')
-    .eq('user_id', userId)
+    .eq('user_id', token.userId)
     .eq('deleted', false)
     .limit(1);
 
+  assertLocalOwner(token);
   if (error) {
     throw new Error(error.message);
   }
 
   return (data?.length ?? 0) > 0;
+};
+
+export async function cloudHasDataForUser(userId: string): Promise<boolean> {
+  return cloudHasDataForOwner(getLocalOwnerToken(userId));
 }
 
-export async function pullSupabaseDataToLocal(userId: string): Promise<void> {
+const pullSupabaseDataForOwner = async (token: LocalOwnerToken): Promise<void> => {
   const client = assertSupabaseConfigured();
+  assertLocalOwner(token);
   const [walletsResponse, budgetItemsResponse] = await Promise.all([
     client
       .from('wallets')
       .select(
         'id,user_id,name,order,color,category_id,created_at,updated_at,sync_status,deleted'
       )
-      .eq('user_id', userId)
+      .eq('user_id', token.userId)
       .eq('deleted', false),
     client
       .from('budget_items')
       .select(
         'id,user_id,wallet_id,order,name,type,amount,date,category_tag,created_at,updated_at,sync_status,deleted'
       )
-      .eq('user_id', userId)
+      .eq('user_id', token.userId)
       .eq('deleted', false),
   ]);
 
+  assertLocalOwner(token);
   if (walletsResponse.error) {
     throw new Error(walletsResponse.error.message);
   }
@@ -281,6 +318,7 @@ export async function pullSupabaseDataToLocal(userId: string): Promise<void> {
   );
 
   await db.transaction('rw', db.wallets, db.budgetItems, async () => {
+    assertLocalOwner(token);
     if (wallets.length > 0) {
       await db.wallets.bulkPut(wallets);
     }
@@ -288,23 +326,30 @@ export async function pullSupabaseDataToLocal(userId: string): Promise<void> {
     if (budgetItems.length > 0) {
       await db.budgetItems.bulkPut(budgetItems);
     }
+
+    assertLocalOwner(token);
   });
+};
+
+export async function pullSupabaseDataToLocal(userId: string): Promise<void> {
+  await pullSupabaseDataForOwner(getLocalOwnerToken(userId));
 }
 
 export async function migrateLocalDataForUser(userId: string): Promise<MigrationMode> {
-  const localData = await readLocalMigrationData();
+  const token = getLocalOwnerToken(userId);
+  const localData = await readLocalMigrationDataForOwner(token);
 
   if (localData.wallets.length === 0 && localData.budgetItems.length === 0) {
-    const hasCloudData = await cloudHasDataForUser(userId);
+    const hasCloudData = await cloudHasDataForOwner(token);
 
     if (hasCloudData) {
-      await pullSupabaseDataToLocal(userId);
+      await pullSupabaseDataForOwner(token);
       return 'pulled';
     }
 
     return 'skipped-empty';
   }
 
-  await upsertLocalDataToSupabase(userId);
+  await upsertLocalDataForOwner(token, localData);
   return 'pushed';
 }

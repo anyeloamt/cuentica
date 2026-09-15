@@ -2,14 +2,22 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 import type { Wallet, BudgetItem } from '../types';
 
-import { db } from './db';
+import {
+  assertLocalOwner,
+  db,
+  getLocalOwnerToken,
+  isLocalOwnerTokenCurrent,
+  prepareLocalUser,
+} from './db';
 
 describe('CuenticaDB', () => {
   beforeEach(async () => {
+    localStorage.clear();
     await db.open();
   });
 
   afterEach(async () => {
+    localStorage.clear();
     await db.delete();
   });
 
@@ -375,6 +383,82 @@ describe('CuenticaDB', () => {
   });
 
   describe('database state isolation', () => {
+    it('keeps guest rows when they are first claimed by an authenticated user', async () => {
+      await db.wallets.add({
+        id: 'guest-wallet',
+        name: 'Guest Wallet',
+        order: 1,
+        createdAt: 1_000,
+        updatedAt: 1_000,
+        syncStatus: 'pending',
+      });
+
+      const token = await prepareLocalUser('user-a');
+
+      expect(await db.wallets.get('guest-wallet')).toBeDefined();
+      expect(localStorage.getItem('cuentica-local-owner')).toBe('user-a');
+      expect(token).toEqual({ userId: 'user-a', generation: 1 });
+    });
+
+    it('clears local tables only when a different authenticated user becomes active', async () => {
+      await db.wallets.add({
+        id: 'user-a-wallet',
+        name: 'User A Wallet',
+        order: 1,
+        createdAt: 1_000,
+        updatedAt: 1_000,
+      });
+      await db.budgetItems.add({
+        id: 'user-a-item',
+        walletId: 'user-a-wallet',
+        order: 1,
+        name: 'User A Item',
+        type: '+',
+        amount: 100,
+        createdAt: 1_000,
+        updatedAt: 1_000,
+      });
+      localStorage.setItem('cuentica-local-owner', 'user-a');
+
+      await prepareLocalUser('user-b');
+
+      expect(await db.wallets.count()).toBe(0);
+      expect(await db.budgetItems.count()).toBe(0);
+      expect(localStorage.getItem('cuentica-local-owner')).toBe('user-b');
+      expect(localStorage.getItem('cuentica-local-owner-generation')).toBe('1');
+    });
+
+    it('increments the generation only when the authenticated owner changes', async () => {
+      const firstToken = await prepareLocalUser('user-a');
+      const sameOwnerToken = await prepareLocalUser('user-a');
+      const nextOwnerToken = await prepareLocalUser('user-b');
+      const returningOwnerToken = await prepareLocalUser('user-a');
+
+      expect(sameOwnerToken).toEqual(firstToken);
+      expect(nextOwnerToken.generation).toBe(firstToken.generation + 1);
+      expect(returningOwnerToken.generation).toBe(nextOwnerToken.generation + 1);
+      expect(isLocalOwnerTokenCurrent(firstToken)).toBe(false);
+      expect(getLocalOwnerToken('user-a')).toEqual(returningOwnerToken);
+      expect(() => assertLocalOwner(nextOwnerToken)).toThrow('Local data owner changed');
+    });
+
+    it('initializes a generation for an owner persisted by the previous deployment', async () => {
+      localStorage.setItem('cuentica-local-owner', 'user-a');
+      await db.wallets.add({
+        id: 'existing-wallet',
+        name: 'Existing Wallet',
+        order: 1,
+        createdAt: 1,
+        updatedAt: 1,
+      });
+
+      const token = await prepareLocalUser('user-a');
+
+      expect(token).toEqual({ userId: 'user-a', generation: 1 });
+      expect(localStorage.getItem('cuentica-local-owner-generation')).toBe('1');
+      expect(await db.wallets.get('existing-wallet')).toBeDefined();
+    });
+
     it('should have clean state in each test', async () => {
       const count1 = await db.wallets.count();
       expect(count1).toBe(0);

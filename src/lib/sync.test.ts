@@ -18,8 +18,8 @@ interface QueryResult {
 interface QueryCall {
   table: TableName;
   gtValue: number | null;
-  from: number;
-  to: number;
+  orValue: string | null;
+  limit: number;
   orderColumns: string[];
 }
 
@@ -30,11 +30,12 @@ interface MockState {
   };
   calls: QueryCall[];
   unfilteredErrorTables: TableName[];
-  pageErrorStarts: {
+  pageErrorIndexes: {
     wallets: number[];
     budget_items: number[];
   };
-  rangeWaits: Partial<Record<TableName, Promise<void>>>;
+  pageWaits: Partial<Record<TableName, Promise<void>>>;
+  beforePage: Partial<Record<TableName, (pageIndex: number) => void>>;
   upsertWaits: Partial<Record<TableName, Promise<void>>>;
   upserts: {
     wallets: SupabaseWalletRow[][];
@@ -49,7 +50,8 @@ interface SelectQuery {
     column: 'updated_at' | 'id',
     options: { ascending: true }
   ) => SelectQuery;
-  range: (from: number, to: number) => Promise<QueryResult>;
+  or: (filters: string) => SelectQuery;
+  limit: (count: number) => Promise<QueryResult>;
 }
 
 interface QueryBuilder {
@@ -69,11 +71,12 @@ const supabaseMock = vi.hoisted(
       },
       calls: [],
       unfilteredErrorTables: [],
-      pageErrorStarts: {
+      pageErrorIndexes: {
         wallets: [],
         budget_items: [],
       },
-      rangeWaits: {},
+      pageWaits: {},
+      beforePage: {},
       upsertWaits: {},
       upserts: {
         wallets: [],
@@ -102,6 +105,7 @@ const supabaseMock = vi.hoisted(
     const createSelectQuery = (table: TableName): SelectQuery => {
       let userId = '';
       let gtValue: number | null = null;
+      let orValue: string | null = null;
       const orderColumns: string[] = [];
       const query: SelectQuery = {
         eq: (_column: 'user_id', value: string): SelectQuery => {
@@ -116,25 +120,58 @@ const supabaseMock = vi.hoisted(
           orderColumns.push(column);
           return query;
         },
-        range: async (from: number, to: number): Promise<QueryResult> => {
-          state.calls.push({ table, gtValue, from, to, orderColumns: [...orderColumns] });
-          await state.rangeWaits[table];
+        or: (filters: string): SelectQuery => {
+          orValue = filters;
+          return query;
+        },
+        limit: async (count: number): Promise<QueryResult> => {
+          const pageIndex = state.calls.filter((call) => call.table === table).length;
+          state.calls.push({
+            table,
+            gtValue,
+            orValue,
+            limit: count,
+            orderColumns: [...orderColumns],
+          });
+          await state.pageWaits[table];
+          state.beforePage[table]?.(pageIndex);
 
           if (
             (gtValue === null && state.unfilteredErrorTables.includes(table)) ||
-            state.pageErrorStarts[table].includes(from)
+            state.pageErrorIndexes[table].includes(pageIndex)
           ) {
             return { data: null, error: { message: 'network' } };
           }
 
+          const cursorMatch = orValue?.match(
+            /^updated_at\.gt\.(-?\d+),and\(updated_at\.eq\.(-?\d+),id\.gt\.(.+)\)$/
+          );
+          if (orValue !== null && !cursorMatch) {
+            throw new Error(`Unexpected keyset filter: ${orValue}`);
+          }
+          const cursorUpdatedAt = cursorMatch ? Number.parseInt(cursorMatch[1], 10) : null;
+          const cursorId = cursorMatch?.[3] ?? null;
+          if (
+            cursorMatch &&
+            cursorUpdatedAt !== Number.parseInt(cursorMatch[2], 10)
+          ) {
+            throw new Error(`Mismatched keyset filter: ${orValue}`);
+          }
+
           const rows = queryRows(table, userId)
             .filter((row) => gtValue === null || row.updated_at > gtValue)
+            .filter(
+              (row) =>
+                cursorUpdatedAt === null ||
+                row.updated_at > cursorUpdatedAt ||
+                (row.updated_at === cursorUpdatedAt && row.id > (cursorId ?? ''))
+            )
             .sort((left, right) =>
               left.updated_at === right.updated_at
                 ? left.id.localeCompare(right.id)
                 : left.updated_at - right.updated_at
             )
-            .slice(from, to + 1);
+            .slice(0, count);
 
           return { data: rows, error: null };
         },
@@ -227,8 +264,9 @@ const resetSupabaseMock = (): void => {
   supabaseMock.state.rows.budget_items = [];
   supabaseMock.state.calls = [];
   supabaseMock.state.unfilteredErrorTables = [];
-  supabaseMock.state.pageErrorStarts = { wallets: [], budget_items: [] };
-  supabaseMock.state.rangeWaits = {};
+  supabaseMock.state.pageErrorIndexes = { wallets: [], budget_items: [] };
+  supabaseMock.state.pageWaits = {};
+  supabaseMock.state.beforePage = {};
   supabaseMock.state.upsertWaits = {};
   supabaseMock.state.upserts.wallets = [];
   supabaseMock.state.upserts.budget_items = [];
@@ -355,23 +393,65 @@ describe('syncPull', () => {
     expect(
       supabaseMock.state.calls
         .filter((call) => call.table === 'wallets')
-        .map(({ from, to, orderColumns }) => ({ from, to, orderColumns }))
+        .map(({ orValue, limit, orderColumns }) => ({ orValue, limit, orderColumns }))
     ).toEqual([
-      { from: 0, to: 99, orderColumns: ['updated_at', 'id'] },
-      { from: 100, to: 199, orderColumns: ['updated_at', 'id'] },
+      { orValue: null, limit: 100, orderColumns: ['updated_at', 'id'] },
+      {
+        orValue: 'updated_at.gt.2000,and(updated_at.eq.2000,id.gt.wallet-099)',
+        limit: 100,
+        orderColumns: ['updated_at', 'id'],
+      },
     ]);
     expect(
       supabaseMock.state.calls
         .filter((call) => call.table === 'budget_items')
-        .map((call) => call.from)
-    ).toEqual([0, 100]);
+        .map((call) => call.orValue)
+    ).toEqual([
+      null,
+      'updated_at.gt.3000,and(updated_at.eq.3000,id.gt.item-099)',
+    ]);
+  });
+
+  it('does not skip an unvisited row when a visited row moves between pages', async () => {
+    supabaseMock.state.rows.wallets = Array.from({ length: 101 }, (_, index) =>
+      createRemoteWallet({
+        id: `wallet-${index.toString().padStart(3, '0')}`,
+        updated_at: 2_000 + index,
+      })
+    );
+    let markerBeforeSecondPage: string | null = 'not-checked';
+    supabaseMock.state.beforePage.wallets = (pageIndex) => {
+      if (pageIndex !== 1) {
+        return;
+      }
+
+      markerBeforeSecondPage = localStorage.getItem(walletReconciledKey);
+      const visitedRow = supabaseMock.state.rows.wallets.find(
+        (wallet) => wallet.id === 'wallet-000'
+      );
+      if (visitedRow) {
+        visitedRow.updated_at = 10_000;
+      }
+    };
+
+    await syncPull('user-1');
+
+    expect(markerBeforeSecondPage).toBeNull();
+    expect(await db.wallets.count()).toBe(101);
+    expect(await db.wallets.get('wallet-100')).toBeDefined();
+    expect((await db.wallets.get('wallet-000'))?.updatedAt).toBe(10_000);
+    expect(localStorage.getItem(walletSyncKey)).toBe('10000');
+    expect(localStorage.getItem(walletReconciledKey)).toBe('1');
+    expect(
+      supabaseMock.state.calls.filter((call) => call.table === 'wallets')[1]?.orValue
+    ).toBe('updated_at.gt.2099,and(updated_at.eq.2099,id.gt.wallet-099)');
   });
 
   it('does not checkpoint an entity when a later page fails', async () => {
     supabaseMock.state.rows.wallets = Array.from({ length: 101 }, (_, index) =>
       createRemoteWallet({ id: `wallet-${index}`, updated_at: 2_000 + index })
     );
-    supabaseMock.state.pageErrorStarts.wallets = [100];
+    supabaseMock.state.pageErrorIndexes.wallets = [1];
 
     await expect(syncPull('user-1')).rejects.toThrow('network');
 
@@ -379,7 +459,7 @@ describe('syncPull', () => {
     expect(localStorage.getItem(walletSyncKey)).toBeNull();
     expect(localStorage.getItem(walletReconciledKey)).toBeNull();
 
-    supabaseMock.state.pageErrorStarts.wallets = [];
+    supabaseMock.state.pageErrorIndexes.wallets = [];
     supabaseMock.state.calls = [];
     await syncPull('user-1');
 
@@ -396,7 +476,7 @@ describe('syncPull', () => {
     supabaseMock.state.rows.budget_items = Array.from({ length: 101 }, (_, index) =>
       createRemoteBudgetItem({ id: `item-${index}`, updated_at: 3_000 + index })
     );
-    supabaseMock.state.pageErrorStarts.budget_items = [100];
+    supabaseMock.state.pageErrorIndexes.budget_items = [1];
 
     await expect(syncPull('user-1')).rejects.toThrow('network');
 
@@ -499,7 +579,7 @@ describe('syncPull', () => {
   it('rejects an old pull response after local ownership changes', async () => {
     const delayedRange = createDeferred();
     supabaseMock.state.rows.wallets = [createRemoteWallet({ user_id: 'user-1' })];
-    supabaseMock.state.rangeWaits.wallets = delayedRange.promise;
+    supabaseMock.state.pageWaits.wallets = delayedRange.promise;
 
     const oldPull = syncPull('user-1');
     await Promise.resolve();
@@ -630,7 +710,10 @@ describe('fullSync', () => {
 
   it('reconciles old cloud wallets after local data becomes partial', async () => {
     localStorage.setItem(hydrationKey, 'done');
-    localStorage.setItem(syncKey, '2000000000');
+    localStorage.setItem(walletSyncKey, '2000000000');
+    localStorage.setItem(budgetItemSyncKey, '2000000000');
+    localStorage.setItem(walletReconciledKey, '1');
+    localStorage.setItem(budgetItemReconciledKey, '1');
     supabaseMock.state.rows.wallets = [
       createRemoteWallet({ id: 'old-wallet-1', updated_at: 1_000_000_000 }),
       createRemoteWallet({ id: 'old-wallet-2', updated_at: 1_000_000_100 }),
@@ -650,6 +733,9 @@ describe('fullSync', () => {
 
     expect(await db.wallets.count()).toBe(3);
     expect(result).toBe('converged');
+    expect(
+      supabaseMock.state.calls.find((call) => call.table === 'wallets')?.gtValue
+    ).toBeNull();
   });
 
   it('reconciles old remote tombstones without replacing pending local rows', async () => {
@@ -805,7 +891,7 @@ describe('fullSync', () => {
     localStorage.setItem(walletReconciledKey, '1');
     localStorage.setItem(budgetItemReconciledKey, '1');
     const delayedRange = createDeferred();
-    supabaseMock.state.rangeWaits.wallets = delayedRange.promise;
+    supabaseMock.state.pageWaits.wallets = delayedRange.promise;
 
     const syncing = fullSync('user-1');
     await vi.waitFor(() =>
@@ -863,7 +949,7 @@ describe('fullSync', () => {
     expect(localStorage.getItem(hydrationKey)).toBe('done');
     expect(
       supabaseMock.state.calls.filter((call) => call.gtValue === null).length
-    ).toBe(2);
+    ).toBe(4);
   });
 
   it('hydrates even when the old migration flag is already done', async () => {
@@ -878,15 +964,17 @@ describe('fullSync', () => {
     expect(localStorage.getItem(hydrationKey)).toBe('done');
   });
 
-  it('does not repeat the unfiltered hydration pull after the flag is set', async () => {
+  it('performs an authoritative entity pull on every normal full sync', async () => {
     supabaseMock.state.rows.wallets = [createRemoteWallet()];
 
     await fullSync('user-1');
     await fullSync('user-1');
 
     expect(
-      supabaseMock.state.calls.filter((call) => call.gtValue === null).length
-    ).toBe(2);
+      supabaseMock.state.calls.filter(
+        (call) => call.table === 'wallets' && call.gtValue === null
+      )
+    ).toHaveLength(3);
     expect(localStorage.getItem(hydrationKey)).toBe('done');
   });
 

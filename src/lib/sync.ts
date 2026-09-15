@@ -18,6 +18,11 @@ const SYNC_BATCH_SIZE = 100;
 const PULL_CHECKPOINT_OVERLAP_MS = 24 * 60 * 60 * 1000;
 
 type SyncEntity = 'wallets' | 'budget-items';
+interface PullCursor {
+  updatedAt: number;
+  id: string;
+}
+
 export type SyncResult = 'converged' | 'pending';
 
 const getEntityCheckpointStorageKey = (userId: string, entity: SyncEntity): string =>
@@ -62,7 +67,7 @@ const maxUpdatedAt = <T extends { updatedAt: number }>(rows: T[]): number | null
 const pullRemoteWalletPage = async (
   token: LocalOwnerToken,
   pullSinceTimestamp: number | null,
-  offset: number
+  cursor: PullCursor | null
 ): Promise<SupabaseWalletRow[]> => {
   assertLocalOwner(token);
   const client = assertSupabaseConfigured();
@@ -74,10 +79,15 @@ const pullRemoteWalletPage = async (
     pullSinceTimestamp === null
       ? walletsQuery
       : walletsQuery.gt('updated_at', pullSinceTimestamp);
-  const walletsResponse = await filteredQuery
+  const pageQuery = cursor
+    ? filteredQuery.or(
+        `updated_at.gt.${cursor.updatedAt},and(updated_at.eq.${cursor.updatedAt},id.gt.${cursor.id})`
+      )
+    : filteredQuery;
+  const walletsResponse = await pageQuery
     .order('updated_at', { ascending: true })
     .order('id', { ascending: true })
-    .range(offset, offset + SYNC_BATCH_SIZE - 1);
+    .limit(SYNC_BATCH_SIZE);
 
   assertLocalOwner(token);
   if (walletsResponse.error) {
@@ -90,7 +100,7 @@ const pullRemoteWalletPage = async (
 const pullRemoteBudgetItemPage = async (
   token: LocalOwnerToken,
   pullSinceTimestamp: number | null,
-  offset: number
+  cursor: PullCursor | null
 ): Promise<SupabaseBudgetItemRow[]> => {
   assertLocalOwner(token);
   const client = assertSupabaseConfigured();
@@ -102,10 +112,15 @@ const pullRemoteBudgetItemPage = async (
     pullSinceTimestamp === null
       ? budgetItemsQuery
       : budgetItemsQuery.gt('updated_at', pullSinceTimestamp);
-  const budgetItemsResponse = await filteredQuery
+  const pageQuery = cursor
+    ? filteredQuery.or(
+        `updated_at.gt.${cursor.updatedAt},and(updated_at.eq.${cursor.updatedAt},id.gt.${cursor.id})`
+      )
+    : filteredQuery;
+  const budgetItemsResponse = await pageQuery
     .order('updated_at', { ascending: true })
     .order('id', { ascending: true })
-    .range(offset, offset + SYNC_BATCH_SIZE - 1);
+    .limit(SYNC_BATCH_SIZE);
 
   assertLocalOwner(token);
   if (budgetItemsResponse.error) {
@@ -196,21 +211,25 @@ const getPullSinceTimestamp = (token: LocalOwnerToken, entity: SyncEntity): numb
   return Math.max(0, checkpoint - PULL_CHECKPOINT_OVERLAP_MS);
 };
 
-const syncEntityPull = async (token: LocalOwnerToken, entity: SyncEntity): Promise<void> => {
-  const pullSinceTimestamp = getPullSinceTimestamp(token, entity);
+const syncEntityPull = async <TRow extends { id: string; updated_at: number }>(
+  token: LocalOwnerToken,
+  entity: SyncEntity,
+  pullRemotePage: (
+    token: LocalOwnerToken,
+    pullSinceTimestamp: number | null,
+    cursor: PullCursor | null
+  ) => Promise<TRow[]>,
+  applyRemoteRows: (token: LocalOwnerToken, rows: TRow[]) => Promise<number | null>,
+  authoritative: boolean
+): Promise<void> => {
+  const pullSinceTimestamp = authoritative ? null : getPullSinceTimestamp(token, entity);
   let nextCheckpoint: number | null = null;
-  let offset = 0;
+  let cursor: PullCursor | null = null;
   let hasMore = true;
 
   while (hasMore) {
-    const remoteRows =
-      entity === 'wallets'
-        ? await pullRemoteWalletPage(token, pullSinceTimestamp, offset)
-        : await pullRemoteBudgetItemPage(token, pullSinceTimestamp, offset);
-    const pageCheckpoint =
-      entity === 'wallets'
-        ? await applyRemoteWallets(token, remoteRows as SupabaseWalletRow[])
-        : await applyRemoteBudgetItems(token, remoteRows as SupabaseBudgetItemRow[]);
+    const remoteRows = await pullRemotePage(token, pullSinceTimestamp, cursor);
+    const pageCheckpoint = await applyRemoteRows(token, remoteRows);
 
     if (pageCheckpoint !== null) {
       nextCheckpoint = Math.max(nextCheckpoint ?? pageCheckpoint, pageCheckpoint);
@@ -218,7 +237,8 @@ const syncEntityPull = async (token: LocalOwnerToken, entity: SyncEntity): Promi
 
     hasMore = remoteRows.length === SYNC_BATCH_SIZE;
     if (hasMore) {
-      offset += SYNC_BATCH_SIZE;
+      const lastRemoteRow = remoteRows[remoteRows.length - 1];
+      cursor = { updatedAt: lastRemoteRow.updated_at, id: lastRemoteRow.id };
     }
   }
 
@@ -239,9 +259,24 @@ const syncEntityPull = async (token: LocalOwnerToken, entity: SyncEntity): Promi
   );
 };
 
-const syncPullForOwner = async (token: LocalOwnerToken): Promise<void> => {
-  await syncEntityPull(token, 'wallets');
-  await syncEntityPull(token, 'budget-items');
+const syncPullForOwner = async (
+  token: LocalOwnerToken,
+  authoritative = false
+): Promise<void> => {
+  await syncEntityPull(
+    token,
+    'wallets',
+    pullRemoteWalletPage,
+    applyRemoteWallets,
+    authoritative
+  );
+  await syncEntityPull(
+    token,
+    'budget-items',
+    pullRemoteBudgetItemPage,
+    applyRemoteBudgetItems,
+    authoritative
+  );
 };
 
 const syncHydrateForOwner = async (token: LocalOwnerToken): Promise<void> => {
@@ -364,7 +399,7 @@ const fullSyncForOwner = async (token: LocalOwnerToken): Promise<SyncResult> => 
   assertLocalOwner(token);
   await syncHydrateForOwner(token);
   await syncPushForOwner(token);
-  await syncPullForOwner(token);
+  await syncPullForOwner(token, true);
   return (await countPendingForOwner(token)) === 0 ? 'converged' : 'pending';
 };
 

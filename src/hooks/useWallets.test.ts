@@ -1,5 +1,5 @@
 import { renderHook } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Wallet } from '../types';
 
@@ -15,6 +15,19 @@ const mockDeleteWallet = vi.fn();
 const mockUpdate = vi.fn();
 const mockWhere = vi.fn();
 const mockDeleteBudgetItems = vi.fn();
+const originalCrypto = globalThis.crypto;
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
+type TestCrypto = Pick<Crypto, 'getRandomValues'> & {
+  randomUUID?: Crypto['randomUUID'];
+};
+
+function setTestCrypto(testCrypto: TestCrypto): void {
+  Object.defineProperty(globalThis, 'crypto', {
+    configurable: true,
+    value: testCrypto,
+  });
+}
 
 vi.mock('dexie-react-hooks', () => ({
   useLiveQuery: (querier: () => unknown) => querier(),
@@ -59,6 +72,13 @@ describe('useWallets', () => {
         return await callback();
       }
       return undefined;
+    });
+  });
+
+  afterEach(() => {
+    Object.defineProperty(globalThis, 'crypto', {
+      configurable: true,
+      value: originalCrypto,
     });
   });
 
@@ -107,6 +127,11 @@ describe('useWallets', () => {
 
   describe('createWallet', () => {
     it('creates a wallet with correct properties', async () => {
+      const randomUUIDValue: ReturnType<Crypto['randomUUID']> =
+        '11111111-2222-4333-8444-555555555555';
+      const randomUUID = vi.fn<[], ReturnType<Crypto['randomUUID']>>(() => randomUUIDValue);
+      const getRandomValues = vi.fn(<T extends ArrayBufferView>(array: T): T => array);
+      setTestCrypto({ randomUUID, getRandomValues });
       mockToArray.mockReturnValue([]);
       mockLast.mockResolvedValue({ order: 1 }); // Max order is 1
 
@@ -119,11 +144,42 @@ describe('useWallets', () => {
         expect.objectContaining({
           name: 'New Wallet',
           order: 2, // 1 + 1
-          id: expect.any(String),
+          id: '11111111-2222-4333-8444-555555555555',
           createdAt: expect.any(Number),
           updatedAt: expect.any(Number),
+          syncStatus: 'pending',
         })
       );
+      expect(randomUUID).toHaveBeenCalledTimes(1);
+      expect(getRandomValues).not.toHaveBeenCalled();
+    });
+
+    it('creates a wallet with a fallback UUID when randomUUID is unavailable', async () => {
+      const fallbackBytes = [
+        0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x06, 0x77, 0x08, 0x99, 0xaa,
+        0xbb, 0xcc, 0xdd, 0xee, 0xff,
+      ];
+      const getRandomValues = vi.fn(<T extends ArrayBufferView>(array: T): T => {
+        if (array instanceof Uint8Array) {
+          array.set(fallbackBytes);
+        }
+        return array;
+      });
+      setTestCrypto({ getRandomValues });
+      mockToArray.mockReturnValue([]);
+      mockLast.mockResolvedValue(undefined);
+
+      const { result } = renderHook(() => useWallets());
+
+      const createResult = await result.current.createWallet('Offline Wallet');
+
+      const createdWallet = mockAdd.mock.calls[0][0] as Wallet;
+      expect(createResult).toEqual({ ok: true });
+      expect(createdWallet.id).toBe('00112233-4455-4677-8899-aabbccddeeff');
+      expect(createdWallet.id).toMatch(uuidPattern);
+      expect(createdWallet.name).toBe('Offline Wallet');
+      expect(createdWallet.syncStatus).toBe('pending');
+      expect(getRandomValues).toHaveBeenCalledTimes(1);
     });
 
     it('handles first wallet creation (order 0)', async () => {
